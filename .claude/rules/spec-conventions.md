@@ -4,17 +4,17 @@
 
 ## The compact
 
-- **Specs in `specs/` and `features/<n>/` are the source of truth.** The implementation must satisfy them.
+- **Specs in `Specs/` and `Features/<tool>/` are the source of truth.** The implementation must satisfy them.
 - **Reverse pointers are mandatory.** Every class, function, or module that realizes a spec carries `// SPEC: <id>`. Tests are tagged with the spec IDs they verify.
 - **Use `// SPEC: <id> (deviates: <reason>)`** when the implementation must differ from the spec. Use `// SPEC: manual` for genuinely incidental code with no behavioral contract.
 - **The spec defines what; the test proves it; the implementation satisfies it.** None is the source of truth alone.
-- **flexscope is single-platform (macOS).** There is no reference-vs-other-platform split — the discipline here is vertical (spec → test → impl), not lateral.
+- **Each tool is its own vertical.** There is no cross-platform projection to reconcile — the discipline here is vertical (spec → test → impl) per tool, not lateral.
 
 ## Before writing implementation code
 
 1. Read the spec file. Confirm the ID, depends-on chain, and behavior.
-2. Read the existing patterns for similar specs (look for other `// SPEC:` annotations in the same area).
-3. Write the failing tests first, tagged with the spec ID and scenario sub-IDs (Swift Testing; the `SampleAppKit` oracle for injection-dependent behavior).
+2. Read the existing patterns for similar specs (look for other `// SPEC:` annotations in the same `Sources/<tool>/`, and the shared foundations: `AgentCLI`, `MachOFoundation`, `RuntimeKit`, `SDKIndex`).
+3. Write the failing tests first, tagged with the spec ID and scenario sub-IDs (Swift Testing; a tool-appropriate oracle — checked-in fixtures, an embedded corpus, or `SampleAppKit` for injection-dependent behavior).
 4. Implement the minimum to pass the tests.
 5. Verify with `/sdd-verify`.
 
@@ -33,6 +33,6 @@
 
 ## Where to read more
 
-- `specs/CONVENTIONS.md` — full conventions, kind taxonomy, frontmatter schema, drift rules.
-- `specs/ARCHITECTURE.md` — components, the purity boundary, IPC contract, injection model, security model.
-- `specs/STACK.md` — the toolchain catalog.
+- `Specs/CONVENTIONS.md` — full conventions, kind taxonomy, frontmatter schema, drift rules.
+- `Specs/ARCHITECTURE.md` — the three clusters, the shared foundations, the purity boundary, the dual-use posture.
+- `Specs/STACK.md` — the toolchain catalog.

@@ -10,7 +10,7 @@ The code an agent writes in this repo should feel like code a careful human wrot
 
 - **One responsibility per file.** A file that handles routing + state + rendering + validation has four files in it. Split them.
 - **A file over ~250 lines is a smell.** Not a hard limit — but stop and ask "what is this file actually about?". Multi-purpose files reliably get worse over time; focused files reliably get better.
-- **Group by feature, not by layer.** A `features/<slug>/` directory containing the view model + its tests + its components is easier to reason about than parallel `view-models/` / `components/` / `tests/` trees.
+- **Group by responsibility, not by layer.** A `Sources/<tool>/` target that holds one tool's command surface and its pure core together reads better than scattering that tool across parallel `commands/` / `models/` / `output/` trees. Each tool and each foundation is its own target.
 
 ### Functions and methods
 
@@ -28,7 +28,7 @@ The code an agent writes in this repo should feel like code a careful human wrot
 ### Separation of concerns
 
 - **Pure logic and I/O don't share a function.** I/O at the edges; pure logic in the middle.
-- **Commands stay thin.** A CLI command parses args, calls the shell (RPC / injection), and hands the result to a pure encoder — it shouldn't interleave transport, AppKit reads, and JSON projection. A command that reaches into AppKit directly is doing too much.
+- **Commands stay thin.** A CLI command parses args, calls the shell (a subprocess, an RPC, an injection), and hands the result to a pure encoder — it shouldn't interleave transport, framework reads, and JSON projection. A command that interleaves all three is doing too much.
 - **The domain layer doesn't import the framework.** Domain types and invariants should be plain — testable without spinning up the runtime.
 
 ### Comments

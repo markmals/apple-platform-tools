@@ -24,11 +24,11 @@ Do **not** commit mid-task work. If tests are red, if the file is half-edited, i
 
 Counter-examples that are _not_ one logical change:
 
-- "Add the attach command and also bump the toolchain version"
-- "Fix the stale-node bug and reformat the file"
-- "Implement story.attach.inject and story.attach.release"
+- "Add the sdk-api check command and also bump swift-argument-parser"
+- "Fix the headerdump timeout bug and reformat the file"
+- "Implement command.sdk-api.check and command.sdk-api.members"
 
-In each case, split. The toolchain bump is its own commit. The reformat is either its own commit or, ideally, dropped because it has nothing to do with the bug.
+In each case, split. The dependency bump is its own commit. The reformat is either its own commit or, ideally, dropped because it has nothing to do with the bug.
 
 ## What goes in a good message
 
@@ -45,28 +45,28 @@ The **description**:
 - Imperative, present tense: "add", "fix", "remove" — not "added" or "adds".
 - The whole subject (scope included) stays under ~72 characters.
 - No trailing period.
-- Specific. "fix bug" is useless; "reject stale node ids in inspect" is useful.
+- Specific. "fix bug" is useless; "reject stale node ids in node" is useful.
 
-The **scope** names what the commit touches. Scoped Commits leaves the vocabulary to the project; in this repo a scope must be one of the **defined** scopes below — and `scoped-commits.sh` enforces that mechanically, rejecting a subject whose scope isn't real (see `.claude/rules/enforcement-hierarchy.md`). The set isn't a hand-maintained list: the hook derives it from the filesystem at commit time, so adding a spec or a feature folder makes its ID a usable scope automatically.
+The **scope** names what the commit touches. Scoped Commits leaves the vocabulary to the project; in this repo a scope must be one of the **defined** scopes below — and `scoped-commits.sh` enforces that mechanically, rejecting a subject whose scope isn't real (see `.claude/rules/enforcement-hierarchy.md`). The set isn't a hand-maintained list: the hook derives it from the filesystem at commit time, so adding a spec, a feature folder, or a `Sources/` target makes it a usable scope automatically.
 
-| Scope                                                                                                  | Use for                                                                                                                                             |
-| ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| a **spec / feature ID** — `command.attach`, `story.attach.inject`, `domain.node`, `error.find.timeout` | A change scoped to one spec's behavior. **The common case here.** The scope is a **reverse pointer to that `id:`** — same discipline as `// SPEC:`. |
-| the platform — `macos` (also `mac`, `flexmac` for the injected FLEX port / core module)                | Implementation changes for the macOS tool. flexscope is single-platform; there is no `apps/` projection.                                            |
-| `specs`                                                                                                | Cross-cutting spec files (`CONVENTIONS`, `ARCHITECTURE`, `DESIGN_SYSTEM`, `STACK`).                                                                 |
-| `features/<slug>`                                                                                      | Authoring or extending a feature folder (slug must be a real `features/` directory).                                                                |
-| a harness area — `hooks`, `skills`, `commands`, `agents`, `templates`, `rules`, `docs`, `mise`         | Changes to the harness's own machinery.                                                                                                             |
-| `treewide`                                                                                             | A genuinely repo-wide sweep with no single home.                                                                                                    |
+| Scope | Use for |
+| --- | --- |
+| a **spec / feature ID** — `command.sdk-api.check`, `domain.agent-cli`, `story.headerdump.dump-framework`, `error.flexscope.stale-node` | A change scoped to one spec's behavior. **The common case here.** The scope is a **reverse pointer to that `id:`** — same discipline as `// SPEC:`. |
+| a **tool or library target** — `sdk-api`, `sdk-search`, `headerdump`, `redump`, `flexscope`, `FlexScopeBoot` | A tool-level change not tied to one spec (a CLI-wide refactor, a manifest tweak). Derived from `Sources/`. Library targets are PascalCase (`AgentCLI`, `MachOFoundation`, …) and scopes are lowercase, so scope library changes by the library's `domain.*` spec ID (e.g. `domain.agent-cli`). |
+| `specs` | Cross-cutting spec files (`CONVENTIONS`, `ARCHITECTURE`, `STACK`, cross-cutting `models/`). |
+| `features/<tool>` | Authoring or extending a tool's feature namespace under `Features/<tool>/`. |
+| a harness area — `hooks`, `skills`, `commands`, `agents`, `templates`, `rules`, `docs`, `mise` | Changes to the harness's own machinery. |
+| `treewide` | A genuinely repo-wide sweep with no single home. |
 
-The IDs come straight from the `id:` frontmatter in `specs/` and `features/` — list them with `grep -rhE '^id:' specs features`. When a change spans more than one area, prefer the **broadest scope that still describes it**; only fall back to a comma-separated list (`command.attach, command.detach: …`) when no single scope fits, and to `treewide` for a true global sweep. A ticket number, when there is one, goes in parentheses after the scope: `macos (PROJ-12): …`.
+The IDs come straight from the `id:` frontmatter in `Specs/` and `Features/` — list them with `grep -rhE '^id:' Specs Features`. When a change spans more than one area, prefer the **broadest scope that still describes it**; only fall back to a comma-separated list (`command.sdk-api.check, command.sdk-api.members: …`) when no single scope fits, and to `treewide` for a true global sweep. A ticket number, when there is one, goes in parentheses after the scope: `flexscope (PROJ-12): …`.
 
 Examples:
 
-- `command.attach: add FLEX port injection with schema handshake`
-- `story.inspect.safety: reject ivar reads on stale node ids`
-- `specs: clarify stale-node handling in story.node.stale-detection`
-- `domain.ipc: split frame decoder into header and payload readers`
-- `hooks: dispatch format-on-edit to the platform's fmt task`
+- `command.sdk-api.check: report the minimum OS for a symbol`
+- `domain.agent-cli: add JSON-Lines streaming to the output contract`
+- `specs: clarify per-tool feature namespacing in CONVENTIONS`
+- `headerdump: cache the dyld shared cache parse across images`
+- `hooks: derive commit scopes from Sources/ targets`
 
 Reverts, merges, and other mechanical commits don't have to follow this shape — format them however is clearest.
 
@@ -84,7 +84,7 @@ Skip the body for trivial changes.
 
 Optional `Key: value` lines at the end of the message. Use for:
 
-- Cross-references: `Refs: story.attach.inject`, `Spec: command.attach`
+- Cross-references: `Refs: story.headerdump.dump-framework`, `Spec: command.sdk-api.check`
 - A ticket, if you'd rather not put it in the scope: `Ticket: PROJ-12`
 - Breaking changes: `BREAKING CHANGE: <description>`
 - Co-authorship (if collaborating)
@@ -108,13 +108,14 @@ Optional `Key: value` lines at the end of the message. Use for:
 ## What never to commit
 
 - Secrets (`.env`, credential files, API keys). If you see these in `git status`, stop and warn the user.
-- Build outputs (`dist/`, `.output/`, `build/`). The `.gitignore` should already exclude these — if it doesn't, fix the gitignore in its own commit.
+- Build outputs (`dist/`, `.build/`, `DerivedData/`). The `.gitignore` should already exclude these — if it doesn't, fix the gitignore in its own commit.
+- The runtime cluster's signed artifacts (`*.dylib`, `*.framework`) — they are an attack tool elsewhere; `.gitignore` excludes them and containment is load-bearing.
 - Personal IDE config (`.vscode/`, `.idea/`). Unless the user explicitly asks.
 - Large binaries unless the project explicitly tracks them.
 
 ## Frequency
 
-Prefer **many small commits** over a few large ones. Five focused commits with clear messages beat one giant "implement the attach feature" commit every time. Small commits are easier to review, revert, cherry-pick, and reason about months later.
+Prefer **many small commits** over a few large ones. Five focused commits with clear messages beat one giant "implement the headerdump feature" commit every time. Small commits are easier to review, revert, cherry-pick, and reason about months later.
 
 ## Push policy
 
