@@ -22,11 +22,11 @@ public struct SymbolOut: Encodable, Sendable {
   public let declaration: String
   public let availability: AvailabilityOut?
 
-  public init(_ s: Symbol) {
-    name = s.names.title
-    qualified = s.qualifiedName
-    kind = s.kind.identifier
-    declaration = s.declaration
-    availability = AvailabilityOut(s.macOSAvailability)
+  public init(_ symbol: Symbol) {
+    name = symbol.names.title
+    qualified = symbol.qualifiedName
+    kind = symbol.kind.identifier
+    declaration = symbol.declaration
+    availability = AvailabilityOut(symbol.macOSAvailability)
   }
 }

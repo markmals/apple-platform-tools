@@ -6,11 +6,11 @@ public struct Corpus: Sendable {
   /// Patterns in their on-disk (deterministic) order.
   public let patterns: [Pattern]
   /// Lookup by id.
-  public let byId: [String: Pattern]
+  public let byID: [String: Pattern]
 
   public init(patterns: [Pattern]) {
     self.patterns = patterns
-    self.byId = Dictionary(patterns.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+    self.byID = Dictionary(patterns.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
   }
 
   enum LoadError: Error, CustomStringConvertible {

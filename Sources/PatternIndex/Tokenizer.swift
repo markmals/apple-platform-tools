@@ -14,8 +14,8 @@ public enum Tokenizer {
   /// Locale-independent (invariant) lowercasing matching .NET `ToLowerInvariant`.
   /// Using the fixed `en_US_POSIX` locale avoids the Turkish dotless-i problem
   /// (where `I`.lowercased() would yield `ı` under a Turkish host locale).
-  public static func invariantLowercased(_ s: String) -> String {
-    s.lowercased(with: Locale(identifier: "en_US_POSIX"))
+  public static func invariantLowercased(_ string: String) -> String {
+    string.lowercased(with: Locale(identifier: "en_US_POSIX"))
   }
 
   public static func tokenize(_ text: String) -> [String] {
@@ -30,8 +30,8 @@ public enum Tokenizer {
 
   /// Lowercase + strip every non-`[a-z0-9]` char (no separators). Builds the
   /// no-separator form used for compound/substring name boosts.
-  public static func compactQuery(_ q: String) -> String {
-    let lower = invariantLowercased(q)
+  public static func compactQuery(_ query: String) -> String {
+    let lower = invariantLowercased(query)
     return String(
       lower.unicodeScalars.filter {
         ($0 >= "a" && $0 <= "z") || ($0 >= "0" && $0 <= "9")
@@ -43,11 +43,11 @@ public enum Tokenizer {
   /// A space is inserted before an uppercase char when the previous char is lowercase
   /// OR the next char is lowercase (so the trailing cap of an acronym joins the
   /// following word: "NSGlass" -> "NS Glass").
-  public static func splitCamelCase(_ s: String) -> String {
-    if s.isEmpty { return s }
-    let chars = Array(s)
+  public static func splitCamelCase(_ identifier: String) -> String {
+    if identifier.isEmpty { return identifier }
+    let chars = Array(identifier)
     var out = ""
-    out.reserveCapacity(s.count + 8)
+    out.reserveCapacity(identifier.count + 8)
     for i in 0..<chars.count {
       let c = chars[i]
       if i > 0 && c.isUppercase

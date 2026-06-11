@@ -10,14 +10,14 @@ public struct SearchHit: Encodable, Sendable {
   public let minMacOS: String?
   public let score: Double
 
-  public init(_ r: SearchEngine.Result) {
-    id = r.id
-    title = r.title
-    category = r.category
-    summary = r.summary
-    minMacOS = r.minMacOS
+  public init(_ result: SearchEngine.Result) {
+    id = result.id
+    title = result.title
+    category = result.category
+    summary = result.summary
+    minMacOS = result.minMacOS
     // Round to a stable, compact precision for output.
-    score = (r.score * 1000).rounded() / 1000
+    score = (result.score * 1000).rounded() / 1000
   }
 }
 
@@ -66,21 +66,21 @@ public struct PatternOutput: Encodable, Sendable {
   public let whenToUse: String
   public let higReference: HIGReference
 
-  public init(_ p: Pattern) {
-    id = p.id
-    title = p.title
-    summary = p.summary
-    category = p.category
-    let trimmed = p.minMacOS?.trimmingCharacters(in: .whitespaces)
+  public init(_ pattern: Pattern) {
+    id = pattern.id
+    title = pattern.title
+    summary = pattern.summary
+    category = pattern.category
+    let trimmed = pattern.minMacOS?.trimmingCharacters(in: .whitespaces)
     minMacOS = (trimmed?.isEmpty ?? true) ? nil : trimmed
-    imports = p.imports
-    keySymbols = p.keySymbols
-    swiftCode = OutputFormatting.normalizeIndent(p.swiftCode)
-    pitfalls = p.pitfalls ?? []
-    related = p.related ?? []
-    replaces = p.replaces
-    whenToUse = p.whenToUse
-    higReference = p.higReference
+    imports = pattern.imports
+    keySymbols = pattern.keySymbols
+    swiftCode = OutputFormatting.normalizeIndent(pattern.swiftCode)
+    pitfalls = pattern.pitfalls ?? []
+    related = pattern.related ?? []
+    replaces = pattern.replaces
+    whenToUse = pattern.whenToUse
+    higReference = pattern.higReference
   }
 }
 

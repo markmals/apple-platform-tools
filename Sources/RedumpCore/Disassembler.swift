@@ -15,8 +15,15 @@ public enum Disassembler: String, Encodable, Sendable, CaseIterable {
 /// Whether a backend's tool can be found, and where.
 public struct BackendStatus: Encodable, Sendable {
   public let backend: String
-  public let configured: Bool
+  public let isConfigured: Bool
   public let path: String?
+
+  // The agent-facing JSON key stays `configured` (see command.redump.backends).
+  private enum CodingKeys: String, CodingKey {
+    case backend
+    case isConfigured = "configured"
+    case path
+  }
 }
 
 // SPEC: command.redump.backends
@@ -56,7 +63,7 @@ public enum BackendDetector {
   ) -> [BackendStatus] {
     Disassembler.allCases.map { backend in
       let path = resolve(backend, environment: environment, exists: exists)
-      return BackendStatus(backend: backend.rawValue, configured: path != nil, path: path)
+      return BackendStatus(backend: backend.rawValue, isConfigured: path != nil, path: path)
     }
   }
 }

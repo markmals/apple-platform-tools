@@ -72,7 +72,11 @@ struct Get: ParsableCommand {
     var outputs: [PatternOutput] = []
     var missing: [String] = []
     for id in ids {
-      if let p = corpus.byId[id] { outputs.append(PatternOutput(p)) } else { missing.append(id) }
+      if let pattern = corpus.byID[id] {
+        outputs.append(PatternOutput(pattern))
+      } else {
+        missing.append(id)
+      }
     }
     if !outputs.isEmpty {
       try AgentCLI.Output.emit(

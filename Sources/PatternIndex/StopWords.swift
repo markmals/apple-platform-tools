@@ -59,10 +59,12 @@ public enum StopWords {
   ]
 
   /// True if the token should be dropped from BOTH query tokens AND tag dicts.
-  public static func isCommon(_ w: String) -> Bool { common.contains(w) }
+  public static func isCommon(_ word: String) -> Bool { common.contains(word) }
 
   /// True if the token should be dropped from tag dicts (a superset of `isCommon`).
-  public static func isTagNoise(_ w: String) -> Bool { common.contains(w) || tagOnly.contains(w) }
+  public static func isTagNoise(_ word: String) -> Bool {
+    common.contains(word) || tagOnly.contains(word)
+  }
 
   /// Drops stop words (common + tagOnly), single-word `*sample`-suffix tokens, and
   /// dedupes (case-folded, order-preserving). Multi-word tags ("context menu") are
