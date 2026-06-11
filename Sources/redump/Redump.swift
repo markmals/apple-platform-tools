@@ -8,7 +8,10 @@ struct Redump: ParsableCommand {
     commandName: "redump",
     abstract:
       "Reverse-engineering binary inspection. Native Mach-O reads now; IDA/Hopper-backed disassembly is a gated, later slice.",
-    subcommands: [Info.self, Segments.self, Symbols.self, Imports.self, Exports.self, Strings.self]
+    subcommands: [
+      Info.self, Segments.self, Symbols.self, Imports.self, Exports.self, Strings.self,
+      Backends.self,
+    ]
   )
 }
 
