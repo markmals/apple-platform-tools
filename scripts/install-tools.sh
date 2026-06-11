@@ -10,7 +10,7 @@
 set -euo pipefail
 
 # Distributable executables. Add a tool here once it is migrated in and safe to ship.
-TOOLS=(sdk-api sdk-search)
+TOOLS=(sdk-api sdk-search headerdump)
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 bindir="${SDK_TOOLS_BINDIR:-$HOME/.local/bin}"
