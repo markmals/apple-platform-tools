@@ -12,6 +12,7 @@ let package = Package(
     .executable(name: "sdk-api", targets: ["sdk-api"]),
     .executable(name: "sdk-search", targets: ["sdk-search"]),
     .executable(name: "headerdump", targets: ["headerdump"]),
+    .executable(name: "redump", targets: ["redump"]),
   ],
   dependencies: [
     .package(url: "https://github.com/apple/swift-argument-parser", from: "1.5.0"),
@@ -99,5 +100,25 @@ let package = Package(
       ]
     ),
     .executableTarget(name: "headerdump", dependencies: ["HeaderDumpCore"]),
+
+    // redump: reverse-engineering binary inspection. Native Mach-O reads on the
+    // MachOKit family now; an IDA/Hopper disassembler backend is a later slice.
+    .target(
+      name: "RedumpCore",
+      dependencies: [.product(name: "MachOKit", package: "MachOKit")]
+    ),
+    .testTarget(
+      name: "RedumpCoreTests",
+      dependencies: [
+        "RedumpCore", "TestSupport", .product(name: "MachOKit", package: "MachOKit"),
+      ]
+    ),
+    .executableTarget(
+      name: "redump",
+      dependencies: [
+        "AgentCLI", "RedumpCore",
+        .product(name: "ArgumentParser", package: "swift-argument-parser"),
+      ]
+    ),
   ]
 )
