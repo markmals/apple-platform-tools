@@ -11,10 +11,20 @@ let package = Package(
     .library(name: "AgentCLI", targets: ["AgentCLI"]),
     .executable(name: "sdk-api", targets: ["sdk-api"]),
     .executable(name: "sdk-search", targets: ["sdk-search"]),
+    .executable(name: "headerdump", targets: ["headerdump"]),
   ],
   dependencies: [
     .package(url: "https://github.com/apple/swift-argument-parser", from: "1.5.0"),
     .package(url: "https://github.com/swiftlang/swift-subprocess.git", exact: "0.5.0"),
+    // Static-analysis cluster: the MachOKit family (Mach-O / dyld-cache / ObjC + Swift section parsing).
+    .package(url: "https://github.com/lynnswap/MachOKit.git", from: "0.47.0"),
+    .package(
+      url: "https://github.com/lynnswap/MachOObjCSection.git",
+      revision: "3dbf6a856cbdc856d4d7c1fe6bbf81161e0fbe9c"),
+    .package(
+      url: "https://github.com/lynnswap/MachOSwiftSection.git",
+      revision: "2fbb1a78e316a2beaf2911488ecda6455e205f84"),
+    .package(url: "https://github.com/p-x9/swift-objc-dump.git", from: "0.8.0"),
   ],
   targets: [
     // ── Shared spine ────────────────────────────────────────────────
@@ -51,5 +61,31 @@ let package = Package(
         .product(name: "ArgumentParser", package: "swift-argument-parser"),
       ]
     ),
+
+    // ── Static-analysis cluster ─────────────────────────────────────
+    // headerdump: private framework header extraction from Mach-O / the dyld cache.
+    // (MachOFoundation will be factored out of HeaderDumpCore's image-loading seam.)
+    .target(name: "HeaderDumpRuntimeObjC", publicHeadersPath: "include"),
+    .target(
+      name: "HeaderDumpCore",
+      dependencies: [
+        .target(name: "HeaderDumpRuntimeObjC", condition: .when(platforms: [.macOS, .iOS])),
+        .product(name: "MachOKit", package: "MachOKit"),
+        .product(name: "MachOObjCSection", package: "MachOObjCSection"),
+        .product(name: "ObjCDump", package: "swift-objc-dump"),
+        .product(name: "MachOSwiftSection", package: "MachOSwiftSection"),
+        .product(name: "SwiftInterface", package: "MachOSwiftSection"),
+      ]
+    ),
+    .testTarget(
+      name: "HeaderDumpCLITests",
+      dependencies: [
+        "HeaderDumpCore",
+        "TestSupport",
+        .target(name: "HeaderDumpRuntimeObjC", condition: .when(platforms: [.macOS, .iOS])),
+        .product(name: "MachOKit", package: "MachOKit"),
+      ]
+    ),
+    .executableTarget(name: "headerdump", dependencies: ["HeaderDumpCore"]),
   ]
 )
