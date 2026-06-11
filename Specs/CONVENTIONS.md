@@ -13,7 +13,7 @@ This document defines the structure of specs in this repo. Every spec, every rev
 
 apple-platform-tools is a monorepo of independent CLIs, each its own **vertical**. Specs here pin _what must hold_ — each tool's JSON output contract, its exit-code map, each command's behavior, the determinism guarantees — independently of the Swift/ObjC that satisfies it. Code is cheap to regenerate against a sharp spec; the spec is the durable artifact.
 
-The tools do not mirror one shared behavior across platforms; they are different tools that share a *contract* (the `AgentCLI` machine interface) and *foundations* (`MachOFoundation`, `RuntimeKit`, `SDKIndex`). So the discipline is vertical (spec → failing test → implementation → review → verification) per tool, not lateral (the same behavior reconciled across web/iOS/Android). The reconciliation machinery (`/sdd-reconcile`) is inert by design; the rest of the SDD vertical is fully in force.
+The tools do not mirror one shared behavior across platforms; they are different tools that share a *contract* (the `AgentCLI` machine interface) and *foundations* (`BinaryFoundation`, `RuntimeKit`, `SDKIndex`). So the discipline is vertical (spec → failing test → implementation → review → verification) per tool, not lateral (the same behavior reconciled across web/iOS/Android). The reconciliation machinery (`/sdd-reconcile`) is inert by design; the rest of the SDD vertical is fully in force.
 
 Specs describe **what** must hold. Tests prove it. Implementations satisfy it. None of those three is the source of truth on its own.
 
@@ -49,7 +49,7 @@ If a kind has multiple instances in a feature (multiple stories, multiple errors
 
 ### Cross-cutting vs feature-scoped
 
-A spec lives in `Features/<tool>/<n>/` until a _second_ consumer depends on it. At that point it gets **promoted**: the file moves to `Specs/<kind>/<id>.md`, but its **ID does not change**. Reverse pointers in code stay valid through the move. The shared foundations (`AgentCLI`, `MachOFoundation`, `RuntimeKit`, `SDKIndex`) are the natural home of cross-cutting specs — the JSON contract, the Mach-O node model, the node-ID grammar.
+A spec lives in `Features/<tool>/<n>/` until a _second_ consumer depends on it. At that point it gets **promoted**: the file moves to `Specs/<kind>/<id>.md`, but its **ID does not change**. Reverse pointers in code stay valid through the move. The shared foundations (`AgentCLI`, `BinaryFoundation`, `RuntimeKit`, `SDKIndex`) are the natural home of cross-cutting specs — the JSON contract, the Mach-O node model, the node-ID grammar.
 
 The only specs that start cross-cutting are `ARCHITECTURE.md`, `STACK.md`, and this file.
 

@@ -54,7 +54,7 @@ Apple publishes no `/llms.txt` for these frameworks — WebFetch the canonical d
 | Generality | any SDK module via `--module` (AppKit, UIKit, SwiftUI, Foundation, …), not AppKit-only |
 | Test oracle | checked-in symbol-graph fixture + corpus-integrity tests — no SDK required at test time |
 
-## Cluster: static binary analysis — `headerdump`, `redump` (`MachOFoundation`)
+## Cluster: static binary analysis — `headerdump`, `redump` (`BinaryFoundation`)
 
 | Concern | Choice |
 | --- | --- |
@@ -64,8 +64,8 @@ Apple publishes no `/llms.txt` for these frameworks — WebFetch the canonical d
 | ObjC dump | swift-objc-dump |
 | Runtime fallback | live ObjC runtime (`dlopen`, `objc_copyClassNamesForImage`) when static parse times out |
 | Simulator source | `xcrun simctl spawn` + dyld shared cache (`dyld_sim_shared_cache_arm64e`) for iOS framework headers |
-| Universal binaries | `lipo`/`file` semantics handled in `MachOFoundation` |
-| `redump` disassembly | drives [IDA](https://hex-rays.com/ida-pro/) (idalib / IDAPython) and [Hopper](https://www.hopperapp.com/) (Python scripting) — **licensed, heavy deps**; the dependency-free half (universal binaries, dyld cache, ObjC metadata) comes from `MachOFoundation` |
+| Universal binaries | `lipo`/`file` semantics handled in `BinaryFoundation` |
+| `redump` disassembly | drives [IDA](https://hex-rays.com/ida-pro/) (idalib / IDAPython) and [Hopper](https://www.hopperapp.com/) (Python scripting) — **licensed, heavy deps**; the dependency-free half (universal binaries, dyld cache, ObjC metadata) comes from `BinaryFoundation` |
 | License note | FLEX-derived code is BSD (dev-only, no App Store); `redump` inherits IDA/Hopper licensing |
 
 ## Cluster: live runtime introspection — `flexscope` (`RuntimeKit` + `FlexScopeBoot`)

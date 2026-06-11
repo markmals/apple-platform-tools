@@ -26,8 +26,8 @@ The monorepo is assembled from existing, mostly-working code. Provenance and sta
 | --- | --- | --- |
 | `mac-dev-skills/src/tools/appkit-api` | `sdk-api` + `SDKIndex` (symbol half) | **Shipping.** Swift 6, lib+exe split, 10 tests, signed, installed. Symbol-graph extract/index/query; already module-generic via `--module`. |
 | `mac-dev-skills/src/tools/appkit-search` | `sdk-search` + `SDKIndex` (search half) | **Shipping.** Swift 6, 44 tests, BM25 + synonym pipeline, embedded 69-pattern HIG corpus. |
-| `PrivateHeaderKit` | `headerdump` + `MachOFoundation` | **~90%.** Swift 6.2, ~5.8k LOC, 6 targets. Mach-O `__objc_*`/`__swift*` parsing via MachOKit family + live-runtime fallback; simulator + host dumping. |
-| `NSExceptional/re-cli` | `redump` (ported) | **Early** (2 commits). TypeScript wrapper over IDA/Hopper, JSON-for-LLM, universal binaries + dyld cache. To be ported to Swift on `MachOFoundation`. |
+| `PrivateHeaderKit` | `headerdump` + `BinaryFoundation` | **~90%.** Swift 6.2, ~5.8k LOC, 6 targets. Mach-O `__objc_*`/`__swift*` parsing via MachOKit family + live-runtime fallback; simulator + host dumping. |
+| `NSExceptional/re-cli` | `redump` (ported) | **Early** (2 commits). TypeScript wrapper over IDA/Hopper, JSON-for-LLM, universal binaries + dyld cache. To be ported to Swift on `BinaryFoundation`. |
 | `flexscope` (specs) | `flexscope` + `FlexScopeBoot` | **Specs only.** 72KB HANDOFF, 17 feature folders, domain models. No code. |
 | `markmals/FLEX` fork | `RuntimeKit` | **Working ObjC.** 379 files; the headless slice (~4.3k-line reflection core + `FLEXAppKitWalker`, already written in this fork) is what we extract. The iOS GUI is left behind. |
 
@@ -47,7 +47,7 @@ The four local projects move in as source; the monorepo becomes the single sourc
 
 ### 4.3 Three clusters over two foundations + a contract (2026-06-11)
 
-- **Static binary analysis** (`headerdump`, `redump`) over `MachOFoundation`.
+- **Static binary analysis** (`headerdump`, `redump`) over `BinaryFoundation`.
 - **Live runtime introspection** (`flexscope`) over `RuntimeKit` (+ `FlexScopeBoot`).
 - **SDK knowledge** (`sdk-api`, `sdk-search`) over `SDKIndex`.
 
@@ -65,7 +65,7 @@ Phased so each phase ends green and the riskiest work (injection) is last.
 - **Phase 0c — harness sweep.** The lifted `.claude/` is flexscope-shaped: commit-discipline scopes name `command.attach`/`flexmac`; the `scoped-commits` hook derives feature scopes from a flat `Features/`; `macos-development` describes only flexscope. Re-scope to tool-namespaced scopes, `Features/<tool>/` derivation, and a generalized dev skill.
 - **Phase 1 — topology + AgentCLI.** Author `Package.swift`'s target graph; build the `AgentCLI` contract library first (it's the through-line). Green build.
 - **Phase 1b — first slice.** Migrate `appkit-api` → `sdk-api` and `appkit-search` → `sdk-search` onto `AgentCLI`; factor their cores into `SDKIndex`. **Rename decided (2026-06-11):** generalize to `sdk-*` and update the `mac-dev-skills` skill wiring in the same pass. Tests green via `mise run test`.
-- **Phase 2 — static cluster.** Absorb PrivateHeaderKit → `headerdump`; factor Mach-O/dyld reading into `MachOFoundation`. Then port re-cli → `redump` on that foundation, surfacing the IDA/Hopper dependency explicitly.
+- **Phase 2 — static cluster.** Absorb PrivateHeaderKit → `headerdump`; factor Mach-O/dyld reading into `BinaryFoundation`. Then port re-cli → `redump` on that foundation, surfacing the IDA/Hopper dependency explicitly.
 - **Phase 3 — runtime cluster.** Extract the FLEX headless core → `RuntimeKit`; absorb flexscope's 17-feature spec layer; wire `flexscope` + `FlexScopeBoot` + FLEX-mac within the package; arm64e signing/injection via build script. Develop against the `SampleAppKit` oracle; first-party last.
 - **Future — iOS/Catalyst.** Rewrite FLEX's UIKit subsystems in Swift as a headless `RuntimeKit` capability; add `.iOS`/`.macCatalyst` to the package. Enables inspecting iOS apps and Mac Catalyst apps. *(user direction, 2026-06-11)*
 
@@ -81,6 +81,6 @@ These are reverse-engineering instruments used for legitimate Apple-platform dev
 ## 7. Open questions
 
 - **`RuntimeKit` language strategy.** The macOS walker arrives as ObjC; the iOS/Catalyst expansion is slated Swift. Converge the macOS core to Swift too, or keep a stable ObjC reflection engine under a Swift surface? (2026-06-11)
-- **`redump` minimum viable surface.** How much of re-cli's value comes from `MachOFoundation` alone (universal binaries, dyld cache, ObjC metadata) before a licensed disassembler is required? Ship the dependency-free half first. (2026-06-11)
+- **`redump` minimum viable surface.** How much of re-cli's value comes from `BinaryFoundation` alone (universal binaries, dyld cache, ObjC metadata) before a licensed disassembler is required? Ship the dependency-free half first. (2026-06-11)
 - **Install/distribution of the safe tools.** `sdk-api`/`sdk-search`/`headerdump` are harmless and broadly useful — do they get a public install path (Homebrew tap?) while the runtime cluster stays private? (2026-06-11)
 - **More tools.** The user has further tool ideas not yet captured here. Each new tool = a new executable target + a `Features/<tool>/` namespace; shared capability factors into a foundation. (2026-06-11)

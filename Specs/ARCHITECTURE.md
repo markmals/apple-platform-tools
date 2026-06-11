@@ -34,7 +34,7 @@ apple-platform-tools/            ← one SwiftPM package
   Sources/
     # ── shared foundations (libraries) ──────────────────────────
     AgentCLI/          the machine contract: Codable JSON, exit-code map, output discipline
-    MachOFoundation/   Mach-O + dyld-shared-cache + universal-binary reading (MachOKit family)
+    BinaryFoundation/   Mach-O + dyld-shared-cache + universal-binary reading (MachOKit family)
     RuntimeKit/        headless ObjC-runtime reflection + AppKit walker (extracted FLEX core)
     SymbolGraphIndex/  Swift symbol-graph extraction + query (any SDK module)
     PatternIndex/      BM25 search over an embedded framework/HIG pattern corpus
@@ -56,7 +56,7 @@ apple-platform-tools/            ← one SwiftPM package
 
 | Cluster | Tools | Shared foundation | What it answers |
 | --- | --- | --- | --- |
-| **Static binary analysis** | `headerdump`, `redump` | `MachOFoundation` | "What's *in* this binary?" — classes, protocols, headers, disassembly, from Mach-O / the dyld shared cache, without running it. |
+| **Static binary analysis** | `headerdump`, `redump` | `BinaryFoundation` | "What's *in* this binary?" — classes, protocols, headers, disassembly, from Mach-O / the dyld shared cache, without running it. |
 | **Live runtime introspection** | `flexscope` | `RuntimeKit` (+ `FlexScopeBoot`) | "What is this *running* process actually doing?" — real view-tree, fonts, constraints, ivars, via injection + the ObjC runtime. |
 | **SDK knowledge** | `sdk-api`, `sdk-search` | `SymbolGraphIndex`, `PatternIndex` | "Does this symbol exist / what does it require / how do I do X?" — symbol graphs + a curated HIG pattern corpus. No target binary or process needed. |
 
@@ -67,7 +67,7 @@ Cheapest cluster (SDK knowledge — pure, offline, any Mac) to most dangerous (r
 The whole point of the monorepo is that the expensive parts are written once:
 
 - **`AgentCLI`** — the machine contract as code. Deterministic `Codable` JSON encoder (stable keys, fixed-precision floats), the exit-code taxonomy, stdout/stderr discipline, `NO_COLOR`. **Every executable links this.** Built first (Phase 1) precisely because it's the contract.
-- **`MachOFoundation`** — universal-binary + Mach-O + dyld-shared-cache reading, on the MachOKit family (`MachOKit`, `MachOObjCSection`, `MachOSwiftSection`). Extracted from PrivateHeaderKit's core; shared by `headerdump` and `redump` (the dependency-free half of what re-cli does).
+- **`BinaryFoundation`** — universal-binary + Mach-O + dyld-shared-cache reading, on the MachOKit family (`MachOKit`, `MachOObjCSection`, `MachOSwiftSection`). Extracted from PrivateHeaderKit's core; shared by `headerdump` and `redump` (the dependency-free half of what re-cli does). (Named `BinaryFoundation`, not `MachOFoundation`, because the MachOKit package already ships a module by that name. As of Phase 2 `headerdump` depends on the MachOKit products directly; `BinaryFoundation` is factored from `HeaderDumpCore`'s image-loading seam — `loadMachOFile`/`loadFromSharedCache`/`sharedCachePath`, decoupled from headerdump's `DumpOptions` — in Phase 2a. 2026-06-11.)
 - **`RuntimeKit`** — the **headless** slice of FLEX: its ObjC reflection engine (`FLEXMirror`/`FLEXProperty`/`FLEXIvar`/`FLEXMethod`, `FLEXRuntimeUtility`), the heap enumerator, and the `FLEXAppKitWalker`. The ~4,300-line core that needs no UI. The FLEX explorer GUI is left behind. **Future direction:** the iOS/UIKit subsystems get rewritten in Swift and brought in headless, so `RuntimeKit` can inspect iOS apps and Mac Catalyst apps — not just AppKit. (User direction, 2026-06-11.)
 - **`SymbolGraphIndex`** — Swift symbol-graph extraction + query for any SDK module (from `appkit-api`'s `AppKitAPICore`, generalized past AppKit). Powers `sdk-api`.
 - **`PatternIndex`** — the BM25 engine + embedded framework/HIG pattern corpus (from `appkit-search`'s `AppKitSearchCore`). Powers `sdk-search`. (The single `SDKIndex` foundation named at design time split into these two focused libraries during Phase 1b — symbol-graph querying and corpus search are separate responsibilities, and neither tool should link the other's code. 2026-06-11.)
@@ -104,4 +104,4 @@ This repo is spec-driven. Specs in `Specs/` (cross-cutting) and `Features/<tool>
 
 - **Binary naming for the SDK-knowledge tools** — keep `appkit-api` / `appkit-search`, or generalize the names to `sdk-api` / `sdk-search` to match the generalized `SDKIndex`? The existing names are load-bearing in the `mac-dev-skills` skill wiring; a rename needs a coordinated update there. (2026-06-11)
 - **`RuntimeKit` language strategy** — the macOS walker arrives as ObjC (the existing FLEX-mac code); the iOS/Catalyst expansion is slated as a Swift rewrite. Do we converge the macOS core to Swift too, or keep a stable ObjC reflection engine under a Swift surface? (2026-06-11)
-- **`redump` minimum viable surface** — IDA (idalib/IDAPython) and Hopper are both heavy, licensed dependencies. How much of re-cli's value is recoverable from `MachOFoundation` alone (universal binaries, dyld cache, ObjC metadata) before a disassembler is required? (2026-06-11)
+- **`redump` minimum viable surface** — IDA (idalib/IDAPython) and Hopper are both heavy, licensed dependencies. How much of re-cli's value is recoverable from `BinaryFoundation` alone (universal binaries, dyld cache, ObjC metadata) before a disassembler is required? (2026-06-11)
