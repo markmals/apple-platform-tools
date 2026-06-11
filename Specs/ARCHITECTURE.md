@@ -5,7 +5,7 @@ kind: architecture
 
 # Architecture
 
-> Orientation, not exhaustive reference. The full design rationale lives in `HANDOFF.md`; per-tool, per-capability detail lives in the feature folders under `features/<tool>/`. This document is the map.
+> Orientation, not exhaustive reference. The full design rationale lives in `HANDOFF.md`; per-tool, per-capability detail lives in the feature folders under `Features/<tool>/`. This document is the map.
 
 ## Product overview
 
@@ -45,8 +45,8 @@ apple-platform-tools/            ← one SwiftPM package
     flexscope/         live AppKit view-tree inspector (injection)  (← flexscope)
     FlexScopeBoot/     injected ObjC bootstrap dylib                (flexscope's server host)
   Tests/
-  specs/                         ← cross-cutting specs (this file, CONVENTIONS, STACK)
-  features/<tool>/<NNNN>-<slug>/  ← feature-scoped specs, namespaced by tool
+  Specs/                         ← cross-cutting specs (this file, CONVENTIONS, STACK)
+  Features/<tool>/<NNNN>-<slug>/  ← feature-scoped specs, namespaced by tool
 ```
 
 **The cost of one package, named honestly:** a single `swift-tools-version` and one platform floor for the whole graph. We pin the floor at the common denominator and gate higher-OS features per-target with `@available`. Tools with hard *runtime* requirements (flexscope needs Tahoe + arm64e + a defanged machine) enforce those at runtime via a `doctor` verb, not via the package manifest. arm64e build flags, codesigning, and injection are **build-script** concerns, never baked into a shippable product.
@@ -96,7 +96,7 @@ Several tools here are reverse-engineering instruments — private-header extrac
 
 ## Spec discipline (how work lands here)
 
-This repo is spec-driven. Specs in `specs/` (cross-cutting) and `features/<tool>/<NNNN>-<slug>/` (feature-scoped, **namespaced by tool** — the multi-tool generalization of flexscope's flat numbering) are the source of truth; the implementation carries `// SPEC: <id>` reverse pointers back. Each tool is its own **vertical** (spec → failing test → implementation → review → verification). There is no cross-platform projection to reconcile, so the lateral SDD machinery (`/sdd-reconcile`) stays inert; the vertical is fully in force. See `CONVENTIONS.md` for the contract and `STACK.md` for the toolchain.
+This repo is spec-driven. Specs in `Specs/` (cross-cutting) and `Features/<tool>/<NNNN>-<slug>/` (feature-scoped, **namespaced by tool** — the multi-tool generalization of flexscope's flat numbering) are the source of truth; the implementation carries `// SPEC: <id>` reverse pointers back. Each tool is its own **vertical** (spec → failing test → implementation → review → verification). There is no cross-platform projection to reconcile, so the lateral SDD machinery (`/sdd-reconcile`) stays inert; the vertical is fully in force. See `CONVENTIONS.md` for the contract and `STACK.md` for the toolchain.
 
 ## Open architectural questions
 

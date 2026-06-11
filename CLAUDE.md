@@ -6,15 +6,15 @@ A monorepo of Swift packages and CLIs that help **coding agents and humans** do 
 
 ## How this repo works
 
-**Specs are the source of truth.** Domain models, command behaviors, errors, stories — all live as markdown in `specs/` (cross-cutting) and `features/<tool>/<NNNN>-<slug>/` (feature-scoped, namespaced by tool). The implementation carries `// SPEC: <id>` reverse pointers back to them.
+**Specs are the source of truth.** Domain models, command behaviors, errors, stories — all live as markdown in `Specs/` (cross-cutting) and `Features/<tool>/<NNNN>-<slug>/` (feature-scoped, namespaced by tool). The implementation carries `// SPEC: <id>` reverse pointers back to them.
 
 If you're tempted to encode a behavioral contract only in code, write a spec instead.
 
 **Read these before doing anything substantial:**
 
-1. `specs/CONVENTIONS.md` — spec format, ID taxonomy, frontmatter, reverse pointers, drift detection. **This is the contract.**
-2. `specs/ARCHITECTURE.md` — the three clusters, the shared foundations, the topology, the purity boundary, the dual-use posture.
-3. `specs/STACK.md` — the toolchain catalog.
+1. `Specs/CONVENTIONS.md` — spec format, ID taxonomy, frontmatter, reverse pointers, drift detection. **This is the contract.**
+2. `Specs/ARCHITECTURE.md` — the three clusters, the shared foundations, the topology, the purity boundary, the dual-use posture.
+3. `Specs/STACK.md` — the toolchain catalog.
 4. `HANDOFF.md` — the full design doc the specs are derived from.
 
 ### Three places work comes from
@@ -31,8 +31,8 @@ If you're tempted to encode a behavioral contract only in code, write a spec ins
 ├── Package.swift        ← one package; library + executable targets
 ├── mise.toml            ← fmt / lint / build / test tasks
 ├── .claude/             ← agents, sdd-* commands, hooks, rules, skills, templates
-├── specs/               ← cross-cutting specs (CONVENTIONS, ARCHITECTURE, STACK)
-├── features/<tool>/     ← feature-scoped specs as <NNNN>-<slug>/, per tool
+├── Specs/               ← cross-cutting specs (CONVENTIONS, ARCHITECTURE, STACK)
+├── Features/<tool>/     ← feature-scoped specs as <NNNN>-<slug>/, per tool
 ├── Sources/
 │   ├── AgentCLI/        ← the machine contract (JSON, exit codes, output discipline)
 │   ├── MachOFoundation/ ← Mach-O + dyld-shared-cache reading
@@ -42,11 +42,11 @@ If you're tempted to encode a behavioral contract only in code, write a spec ins
 └── Tests/
 ```
 
-The three capability clusters — **static binary analysis** (`headerdump`, `redump` on `MachOFoundation`), **live runtime introspection** (`flexscope` on `RuntimeKit`), **SDK knowledge** (`sdk-api`, `sdk-search` on `SDKIndex`) — are described in `specs/ARCHITECTURE.md`. Reach for them cheapest-first: SDK knowledge → static analysis → live injection.
+The three capability clusters — **static binary analysis** (`headerdump`, `redump` on `MachOFoundation`), **live runtime introspection** (`flexscope` on `RuntimeKit`), **SDK knowledge** (`sdk-api`, `sdk-search` on `SDKIndex`) — are described in `Specs/ARCHITECTURE.md`. Reach for them cheapest-first: SDK knowledge → static analysis → live injection.
 
 ## Working with specs
 
-- **Reverse pointers are mandatory.** Every unit that realizes a spec carries `// SPEC: <id>`. Tests are tagged with the spec IDs they verify. See `specs/CONVENTIONS.md`.
+- **Reverse pointers are mandatory.** Every unit that realizes a spec carries `// SPEC: <id>`. Tests are tagged with the spec IDs they verify. See `Specs/CONVENTIONS.md`.
 - **Deviations are explicit.** `// SPEC: <id> (deviates: <reason>)`; `// SPEC: manual` for incidental code.
 - **Stories use Gherkin** with the coding agent as the user. Scenarios have stable sub-IDs tests trace back to. See `writing-user-stories`.
 - **Test pure-first.** Each tool's pure core (JSON projection, ranking, grammar, Mach-O structure interpretation) is unit-tested on any Mac with checked-in fixtures or an embedded corpus — no privileges, no network. Effectful behavior is verified against a tool-appropriate oracle (flexscope: the `SampleAppKit` known-geometry app under `DYLD_INSERT_LIBRARIES`; headerdump: a known framework; sdk-api: a checked-in symbol graph). If a behavior needs injection or a paid disassembler to test, the purity boundary was drawn wrong.
@@ -92,10 +92,10 @@ The three capability clusters — **static binary analysis** (`headerdump`, `red
 
 | Question | Where |
 | --- | --- |
-| "What's a spec ID look like?" | `specs/CONVENTIONS.md` |
-| "How do I add a feature / a new tool?" | `specs/CONVENTIONS.md` → "Adding a new feature" |
-| "What's the architecture / the clusters / the dual-use posture?" | `specs/ARCHITECTURE.md` |
-| "What toolchain does a given tool use?" | `specs/STACK.md` |
+| "What's a spec ID look like?" | `Specs/CONVENTIONS.md` |
+| "How do I add a feature / a new tool?" | `Specs/CONVENTIONS.md` → "Adding a new feature" |
+| "What's the architecture / the clusters / the dual-use posture?" | `Specs/ARCHITECTURE.md` |
+| "What toolchain does a given tool use?" | `Specs/STACK.md` |
 | "The full design rationale?" | `HANDOFF.md` |
 | "How do I write a user story?" | `.claude/skills/writing-user-stories/SKILL.md` |
 | "Should this rule be a hook, command, or prose?" | `.claude/rules/enforcement-hierarchy.md` |

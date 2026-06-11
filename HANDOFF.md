@@ -1,6 +1,6 @@
 # Apple Platform Tools — Design & Handoff
 
-> The long-form rationale behind the specs. `specs/ARCHITECTURE.md` is the map; this is the territory — why the decisions are what they are, where the code comes from, and the order it lands in. Dated decisions cite the day they were made so a future reader can weigh them against what's changed.
+> The long-form rationale behind the specs. `Specs/ARCHITECTURE.md` is the map; this is the territory — why the decisions are what they are, where the code comes from, and the order it lands in. Dated decisions cite the day they were made so a future reader can weigh them against what's changed.
 
 ## 1. Vision
 
@@ -62,7 +62,7 @@ Pure logic and I/O never share a function; dependencies point inward. Every tool
 Phased so each phase ends green and the riskiest work (injection) is last.
 
 - **Phase 0 — identity + spec spine.** ARCHITECTURE / CONVENTIONS / STACK re-scoped from flexscope to the monorepo; CLAUDE.md + mise re-scoped; this doc. *(in progress)*
-- **Phase 0c — harness sweep.** The lifted `.claude/` is flexscope-shaped: commit-discipline scopes name `command.attach`/`flexmac`; the `scoped-commits` hook derives feature scopes from a flat `features/`; `macos-development` describes only flexscope. Re-scope to tool-namespaced scopes, `features/<tool>/` derivation, and a generalized dev skill.
+- **Phase 0c — harness sweep.** The lifted `.claude/` is flexscope-shaped: commit-discipline scopes name `command.attach`/`flexmac`; the `scoped-commits` hook derives feature scopes from a flat `Features/`; `macos-development` describes only flexscope. Re-scope to tool-namespaced scopes, `Features/<tool>/` derivation, and a generalized dev skill.
 - **Phase 1 — topology + AgentCLI.** Author `Package.swift`'s target graph; build the `AgentCLI` contract library first (it's the through-line). Green build.
 - **Phase 1b — first slice.** Migrate `appkit-api` → `sdk-api` and `appkit-search` → `sdk-search` onto `AgentCLI`; factor their cores into `SDKIndex`. **Rename decided (2026-06-11):** generalize to `sdk-*` and update the `mac-dev-skills` skill wiring in the same pass. Tests green via `mise run test`.
 - **Phase 2 — static cluster.** Absorb PrivateHeaderKit → `headerdump`; factor Mach-O/dyld reading into `MachOFoundation`. Then port re-cli → `redump` on that foundation, surfacing the IDA/Hopper dependency explicitly.
@@ -83,4 +83,4 @@ These are reverse-engineering instruments used for legitimate Apple-platform dev
 - **`RuntimeKit` language strategy.** The macOS walker arrives as ObjC; the iOS/Catalyst expansion is slated Swift. Converge the macOS core to Swift too, or keep a stable ObjC reflection engine under a Swift surface? (2026-06-11)
 - **`redump` minimum viable surface.** How much of re-cli's value comes from `MachOFoundation` alone (universal binaries, dyld cache, ObjC metadata) before a licensed disassembler is required? Ship the dependency-free half first. (2026-06-11)
 - **Install/distribution of the safe tools.** `sdk-api`/`sdk-search`/`headerdump` are harmless and broadly useful — do they get a public install path (Homebrew tap?) while the runtime cluster stays private? (2026-06-11)
-- **More tools.** The user has further tool ideas not yet captured here. Each new tool = a new executable target + a `features/<tool>/` namespace; shared capability factors into a foundation. (2026-06-11)
+- **More tools.** The user has further tool ideas not yet captured here. Each new tool = a new executable target + a `Features/<tool>/` namespace; shared capability factors into a foundation. (2026-06-11)

@@ -19,7 +19,7 @@ The toolchain catalog for apple-platform-tools — every tool, framework, and se
 | Subprocess | [swift-subprocess](https://github.com/swiftlang/swift-subprocess) (for tools that shell out — `xcrun`, `simctl`, disassemblers) |
 | Tests | [Swift Testing](https://developer.apple.com/xcode/swift-testing/) (XCTest where ObjC `RuntimeKit` is exercised from ObjC) |
 | Formatter / linter | [swift-format](https://github.com/swiftlang/swift-format) (`swift format` / `swift format lint --strict`) |
-| Specs | Markdown in `specs/` & `features/<tool>/`; Gherkin-in-markdown (agent-as-user) |
+| Specs | Markdown in `Specs/` & `Features/<tool>/`; Gherkin-in-markdown (agent-as-user) |
 | Agent instructions | `CLAUDE.md` + `.claude/` |
 
 ## Tooling
@@ -30,7 +30,7 @@ The toolchain catalog for apple-platform-tools — every tool, framework, and se
 | Task runner | [Mise](https://mise.jdx.dev/) — the `fmt` / `lint` / `build` / `test` contract |
 | IDE | [Xcode](https://developer.apple.com/xcode/) / [VS Code](https://code.visualstudio.com/) |
 | IDE MCP (per-machine, local config) | [Xcode external agent access](https://developer.apple.com/documentation/xcode/giving-external-agents-access-to-xcode) |
-| CI/CD | [GitHub Actions](https://github.com/features/actions) — pure-core + oracle/fixture suites only; **never** injection or paid-disassembler runs on shared runners |
+| CI/CD | [GitHub Actions](https://github.com/Features/actions) — pure-core + oracle/fixture suites only; **never** injection or paid-disassembler runs on shared runners |
 | Install | per-tool `codesign` (ad-hoc) + copy to `~/.local/bin`, resource bundles alongside; a root build/sign/install script |
 
 Apple publishes no `/llms.txt` for these frameworks — WebFetch the canonical doc URLs when you need a reference. See the `macos-development` skill for idioms.

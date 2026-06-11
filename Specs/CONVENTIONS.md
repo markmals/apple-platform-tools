@@ -20,14 +20,14 @@ Specs describe **what** must hold. Tests prove it. Implementations satisfy it. N
 ## File and directory layout
 
 ```
-specs/                          ← cross-cutting (used by ≥ 2 tools, or repo-wide)
+Specs/                          ← cross-cutting (used by ≥ 2 tools, or repo-wide)
 ├── ARCHITECTURE.md             ← singular; the whole monorepo
 ├── CONVENTIONS.md              ← this file
 ├── STACK.md                    ← the toolchain catalog
 ├── models/<id>.md              ← cross-cutting domain models (e.g. the AgentCLI contract)
 └── view-models/<id>.md         ← cross-cutting view models (rare)
 
-features/<tool>/<NNNN>-<slug>/  ← feature-scoped, namespaced by tool
+Features/<tool>/<NNNN>-<slug>/  ← feature-scoped, namespaced by tool
 ├── NARRATIVE.md                ← singular per feature
 ├── README.md                   ← singular per feature; describes the folder
 ├── stories/<id>.md             ← one user story per file
@@ -41,7 +41,7 @@ features/<tool>/<NNNN>-<slug>/  ← feature-scoped, namespaced by tool
 
 ### Per-tool namespacing
 
-Features are grouped by tool: `features/<tool>/<NNNN>-<slug>/`, where `<tool>` is the executable's name (`flexscope`, `headerdump`, `sdk-api`, …). Numbering restarts per tool, so each tool owns a clean `0001…` sequence and the monorepo's growth stays legible. A feature slug is kebab-case.
+Features are grouped by tool: `Features/<tool>/<NNNN>-<slug>/`, where `<tool>` is the executable's name (`flexscope`, `headerdump`, `sdk-api`, …). Numbering restarts per tool, so each tool owns a clean `0001…` sequence and the monorepo's growth stays legible. A feature slug is kebab-case.
 
 ### One logical thing per file
 
@@ -49,13 +49,13 @@ If a kind has multiple instances in a feature (multiple stories, multiple errors
 
 ### Cross-cutting vs feature-scoped
 
-A spec lives in `features/<tool>/<n>/` until a _second_ consumer depends on it. At that point it gets **promoted**: the file moves to `specs/<kind>/<id>.md`, but its **ID does not change**. Reverse pointers in code stay valid through the move. The shared foundations (`AgentCLI`, `MachOFoundation`, `RuntimeKit`, `SDKIndex`) are the natural home of cross-cutting specs — the JSON contract, the Mach-O node model, the node-ID grammar.
+A spec lives in `Features/<tool>/<n>/` until a _second_ consumer depends on it. At that point it gets **promoted**: the file moves to `Specs/<kind>/<id>.md`, but its **ID does not change**. Reverse pointers in code stay valid through the move. The shared foundations (`AgentCLI`, `MachOFoundation`, `RuntimeKit`, `SDKIndex`) are the natural home of cross-cutting specs — the JSON contract, the Mach-O node model, the node-ID grammar.
 
 The only specs that start cross-cutting are `ARCHITECTURE.md`, `STACK.md`, and this file.
 
 ## Frontmatter schema
 
-Every spec file (in `specs/<kind>/` or `features/<tool>/<n>/<kind>/`, plus the singular files like `NARRATIVE.md`) starts with YAML frontmatter:
+Every spec file (in `Specs/<kind>/` or `Features/<tool>/<n>/<kind>/`, plus the singular files like `NARRATIVE.md`) starts with YAML frontmatter:
 
 ```yaml
 ---
@@ -107,7 +107,7 @@ IDs are dotted, lowercase, hierarchical, and stable. The first segment is the ki
 ### Stability rules
 
 - IDs are immutable once an implementation references them. Renaming requires a deliberate migration: update the spec ID, every `// SPEC:` reference, and every test tag in one commit.
-- IDs do not change when a spec is promoted from `features/` to `specs/`.
+- IDs do not change when a spec is promoted from `Features/` to `Specs/`.
 - IDs name the abstract behavior, not the file path. The tool segment in a `command`/`story`/`error` ID identifies the owning tool; a cross-cutting `domain` ID has no tool segment.
 
 ### Filename = ID stem
@@ -241,7 +241,7 @@ All three invariants are mechanically checkable — reverse-pointer presence, an
 
 ## Adding a new feature
 
-1. Pick the tool and the next number: `features/<tool>/<NNNN>-<slug>/`. Slug is kebab-case.
+1. Pick the tool and the next number: `Features/<tool>/<NNNN>-<slug>/`. Slug is kebab-case.
 2. Copy `.claude/templates/feature/` into the new feature directory.
 3. Author `NARRATIVE.md` first (use the brainstorming-style narrative from interviews or product input).
 4. Author stories from the narrative.
@@ -254,7 +254,7 @@ All three invariants are mechanically checkable — reverse-pointer presence, an
 A new tool is a new executable target plus its feature namespace:
 
 1. Add the executable target to `Package.swift`, depending on `AgentCLI` and whichever foundation(s) it needs.
-2. Create `features/<tool>/` and author its first feature as above.
+2. Create `Features/<tool>/` and author its first feature as above.
 3. If it introduces a genuinely shared capability, factor that into (or add) a foundation library rather than the tool target.
 4. Register the tool in `ARCHITECTURE.md`'s cluster table.
 
@@ -269,7 +269,7 @@ A new tool is a new executable target plus its feature namespace:
 
 ## What is NOT a spec
 
-These are reference material an agent may read, but not the spec layer. Do not put them under `specs/` or in a feature folder's spec subdirectories.
+These are reference material an agent may read, but not the spec layer. Do not put them under `Specs/` or in a feature folder's spec subdirectories.
 
 - Wireframes, mockups, visual designs (link from `NARRATIVE.md` if needed)
 - Prototype code or sandbox repos
