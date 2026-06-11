@@ -36,7 +36,8 @@ apple-platform-tools/            ← one SwiftPM package
     AgentCLI/          the machine contract: Codable JSON, exit-code map, output discipline
     MachOFoundation/   Mach-O + dyld-shared-cache + universal-binary reading (MachOKit family)
     RuntimeKit/        headless ObjC-runtime reflection + AppKit walker (extracted FLEX core)
-    SDKIndex/          Swift symbol-graph extraction + query; HIG pattern corpus + BM25
+    SymbolGraphIndex/  Swift symbol-graph extraction + query (any SDK module)
+    PatternIndex/      BM25 search over an embedded framework/HIG pattern corpus
     # ── tools (executables) ─────────────────────────────────────
     sdk-api/           SDK symbol existence + availability        (← appkit-api)
     sdk-search/        ranked HIG/framework pattern search          (← appkit-search)
@@ -57,7 +58,7 @@ apple-platform-tools/            ← one SwiftPM package
 | --- | --- | --- | --- |
 | **Static binary analysis** | `headerdump`, `redump` | `MachOFoundation` | "What's *in* this binary?" — classes, protocols, headers, disassembly, from Mach-O / the dyld shared cache, without running it. |
 | **Live runtime introspection** | `flexscope` | `RuntimeKit` (+ `FlexScopeBoot`) | "What is this *running* process actually doing?" — real view-tree, fonts, constraints, ivars, via injection + the ObjC runtime. |
-| **SDK knowledge** | `sdk-api`, `sdk-search` | `SDKIndex` | "Does this symbol exist / what does it require / how do I do X?" — symbol graphs + a curated HIG pattern corpus. No target binary or process needed. |
+| **SDK knowledge** | `sdk-api`, `sdk-search` | `SymbolGraphIndex`, `PatternIndex` | "Does this symbol exist / what does it require / how do I do X?" — symbol graphs + a curated HIG pattern corpus. No target binary or process needed. |
 
 Cheapest cluster (SDK knowledge — pure, offline, any Mac) to most dangerous (runtime introspection — injection, defanged machine). An agent should reach left-to-right: answer from SDK knowledge if it can, drop to static analysis if it must, and only attach to a live process when nothing else will do.
 
@@ -68,7 +69,8 @@ The whole point of the monorepo is that the expensive parts are written once:
 - **`AgentCLI`** — the machine contract as code. Deterministic `Codable` JSON encoder (stable keys, fixed-precision floats), the exit-code taxonomy, stdout/stderr discipline, `NO_COLOR`. **Every executable links this.** Built first (Phase 1) precisely because it's the contract.
 - **`MachOFoundation`** — universal-binary + Mach-O + dyld-shared-cache reading, on the MachOKit family (`MachOKit`, `MachOObjCSection`, `MachOSwiftSection`). Extracted from PrivateHeaderKit's core; shared by `headerdump` and `redump` (the dependency-free half of what re-cli does).
 - **`RuntimeKit`** — the **headless** slice of FLEX: its ObjC reflection engine (`FLEXMirror`/`FLEXProperty`/`FLEXIvar`/`FLEXMethod`, `FLEXRuntimeUtility`), the heap enumerator, and the `FLEXAppKitWalker`. The ~4,300-line core that needs no UI. The FLEX explorer GUI is left behind. **Future direction:** the iOS/UIKit subsystems get rewritten in Swift and brought in headless, so `RuntimeKit` can inspect iOS apps and Mac Catalyst apps — not just AppKit. (User direction, 2026-06-11.)
-- **`SDKIndex`** — Swift symbol-graph extraction/indexing (from `appkit-api`'s `AppKitAPICore`, generalized past AppKit to any SDK module) + the BM25 pattern engine and HIG corpus (from `appkit-search`'s `AppKitSearchCore`).
+- **`SymbolGraphIndex`** — Swift symbol-graph extraction + query for any SDK module (from `appkit-api`'s `AppKitAPICore`, generalized past AppKit). Powers `sdk-api`.
+- **`PatternIndex`** — the BM25 engine + embedded framework/HIG pattern corpus (from `appkit-search`'s `AppKitSearchCore`). Powers `sdk-search`. (The single `SDKIndex` foundation named at design time split into these two focused libraries during Phase 1b — symbol-graph querying and corpus search are separate responsibilities, and neither tool should link the other's code. 2026-06-11.)
 
 ## The purity boundary (the most consequential structural rule)
 
