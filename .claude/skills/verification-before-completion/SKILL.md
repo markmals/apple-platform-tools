@@ -87,7 +87,7 @@ Any of these = run the verification first.
 After running the verification:
 
 ```
-✅ I ran `mise run -C apps/web test` — 47/47 tests pass. Implementation complete.
+✅ I ran `mise run test` — 47/47 tests pass. Implementation complete.
 ```
 
 Not:
@@ -101,9 +101,9 @@ Not:
 Even when the result is bad, state it cleanly:
 
 ```
-mise run -C apps/web test reports 2 failures:
-  - vm.items.list / [scenario.items.list.populated] — expected 3 items, got 2
-  - vm.items.create / [scenario.item.create.duplicate-email] — no error thrown
+mise run test reports 2 failures:
+  - command.sdk-api.check / [scenario.sdk-api.check.present] — expected present, got absent
+  - error.flexscope.stale-node / [scenario.flexscope.stale-node.rejected] — no error thrown
 Investigating now.
 ```
 

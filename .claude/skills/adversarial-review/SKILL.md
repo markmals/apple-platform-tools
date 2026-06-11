@@ -14,7 +14,7 @@ Lifts the adversarial-refinement idea from VDD. Adapted to this repo: a third re
 ## When to use
 
 - The final stage of `implementing-a-spec`, after spec-compliance ✅ and code-quality ✅.
-- Before declaring any spec done on any platform.
+- Before declaring any spec done.
 - Any time code "looks correct, tests pass" but no one has tried to break it.
 - Standalone, against an existing implementation you distrust.
 
@@ -69,7 +69,7 @@ Do not pad. "I tried to break it along all five lenses and could not" is a clean
 ## Output format
 
 ```
-ADVERSARIAL REVIEW — <spec-id> on <platform>
+ADVERSARIAL REVIEW — <spec-id>
 
 DEFECTS (must fix):
   1. <location> — <what's wrong> — repro: <exact input/action> — got <X>, spec requires <Y>

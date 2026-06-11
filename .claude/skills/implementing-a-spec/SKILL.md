@@ -1,11 +1,11 @@
 ---
 name: implementing-a-spec
-description: Use when implementing a spec on a target platform — `/sdd-apply <id> <platform>`. Dispatches a fresh subagent per spec, runs spec-compliance review, code-quality review, then an adversarial refutational pass, and updates TodoWrite as it goes. This is the default "how to write code" workflow for this repo.
+description: Use when implementing a spec — `/sdd-apply <id>`. Dispatches a fresh subagent per spec, runs spec-compliance review, code-quality review, then an adversarial refutational pass, and updates TodoWrite as it goes. This is the default "how to write code" workflow for this repo.
 ---
 
 # Implementing a Spec
 
-Each spec ID is a unit of work. To implement one on a target platform, you dispatch a fresh subagent that writes failing tests, makes them pass, attaches a `// SPEC: <id>` reverse pointer, then submits for review: spec compliance, code quality, then an adversarial pass that assumes the code is broken and tries to break it (the `adversarial-review` skill).
+Each spec ID is a unit of work. To implement one, you dispatch a fresh subagent that writes failing tests, makes them pass, attaches a `// SPEC: <id>` reverse pointer, then submits for review: spec compliance, code quality, then an adversarial pass that assumes the code is broken and tries to break it (the `adversarial-review` skill).
 
 Lifts patterns from superpowers' subagent-driven-development. Adapted to our spec layer, our reverse-pointer convention, and the fact that we don't use feature branches.
 
@@ -13,8 +13,8 @@ Lifts patterns from superpowers' subagent-driven-development. Adapted to our spe
 
 ## When to use
 
-- The user invoked `/sdd-apply <spec-id> <platform>`.
-- The user said "implement <spec-id> on <platform>".
+- The user invoked `/sdd-apply <spec-id>`.
+- The user said "implement <spec-id>".
 - You are about to write substantive new code that realizes a spec.
 
 **Do NOT use this skill for:**
@@ -29,7 +29,7 @@ Lifts patterns from superpowers' subagent-driven-development. Adapted to our spe
 
 The controller (you) does:
 
-- Read the spec(s) and any cross-platform reference implementation
+- Read the spec(s) and the tool's existing `// SPEC:` neighbors in `Sources/<tool>/`
 - Curate the exact context the implementer subagent needs
 - Manage TodoWrite state
 - Dispatch and review subagents
@@ -51,8 +51,8 @@ The reviewer subagent(s) do:
 
 ```
 For each spec ID:
-  1. Read spec + depends-on chain + web reference impl (if target ≠ web)
-  2. Identify existing reverse pointers, tests, and gaps on the target platform
+  1. Read spec + depends-on chain + the tool's existing // SPEC: neighbors
+  2. Identify existing reverse pointers, tests, and gaps in the relevant Sources/<tool>/
   3. Construct full context for the implementer (don't make them re-read)
   4. Dispatch implementer subagent
      - Subagent asks questions? Answer, re-dispatch.
@@ -69,7 +69,7 @@ For each spec ID:
   8. Move to next spec.
 
 When all specs done:
-  9. Run /sdd-verify <platform> to confirm tests pass.
+  9. Run /sdd-verify to confirm tests pass.
   10. Commit at the natural boundary (see "Commit" below), then surface results to user.
 ```
 
@@ -79,8 +79,8 @@ When all specs done:
 
 - The spec file. Read it in full.
 - Every spec in its `depends-on` chain. Skim, but read the field names and invariants.
-- If target is iOS or Android, find the web reference implementation: `rg "SPEC: <spec-id>" apps/web/`. Read it as a worked example.
-- The platform's `apps/<platform>/CLAUDE.md` for idioms and test conventions.
+- `Specs/CONVENTIONS.md` for the reverse-pointer convention, ID taxonomy, and test-tagging rules.
+- The relevant tool's existing `// SPEC:` neighbors: `rg "SPEC: <spec-id>" Sources/` and the surrounding code in `Sources/<tool>/`. Read them as worked examples for the tool's idioms and test conventions.
 - Existing patterns near where the new code will live (look for other `// SPEC:` annotations in the same area).
 
 The implementer should not need to read any of this — you're providing the curated context.
@@ -93,12 +93,12 @@ If implementing multiple specs in one session, create a TodoWrite item per spec.
 
 Use `subagent_type: "general-purpose"` and `model: "sonnet"`. Provide:
 
-- The full spec text (don't say "read specs/foo/bar.md", paste the contents).
+- The full spec text (don't say "read Specs/foo/bar.md", paste the contents).
 - The full text of every depends-on spec, in the order you want it considered.
-- The full web reference implementation file(s) if target is iOS or Android.
-- The relevant section of `apps/<platform>/CLAUDE.md` (idioms, test framework setup).
+- The tool's existing `// SPEC:` neighbor file(s) as worked examples for its idioms and test setup.
+- The relevant test-tagging rules from `Specs/CONVENTIONS.md` (Swift Testing `@Suite`/`@Test`, or `// SPEC:`/`// [scenario.<id>]` comments for ObjC/XCTest in RuntimeKit).
 - Explicit instructions:
-    1. **Write failing tests first**, tagged with the spec ID and the relevant `[scenario.<id>]` prefixes per `apps/<platform>/CLAUDE.md`.
+    1. **Write failing tests first**, tagged with the spec ID and the relevant `[scenario.<id>]` prefixes per `Specs/CONVENTIONS.md`.
     2. Run the tests to **confirm they fail** for the right reason.
     3. Implement the **minimum code** to make the tests pass.
     4. **Attach `// SPEC: <id>`** to the implementing class/function/module.
@@ -140,11 +140,11 @@ If gaps: the same implementer subagent fixes them; re-dispatch the reviewer unti
 
 ### 6. Dispatch the code-quality reviewer
 
-Same model, same general approach. Provide the same files plus the platform CLAUDE.md idioms section.
+Same model, same general approach. Provide the same files plus the relevant idioms (the tool's `// SPEC:` neighbors and `macos-development` for Swift/ObjC).
 
 Instructions:
 
-1. Check **idioms**: does it look like idiomatic UIKit / Compose / TanStack Start code?
+1. Check **idioms**: does it look like idiomatic Swift 6 / ArgumentParser / AppKit / ObjC code, matching the tool's existing patterns?
 2. Check **naming**: names match the spec's vocabulary; no synonyms drift.
 3. Check **duplication**: no repeated logic that should be extracted.
 4. Check **size**: any file growing too large?
@@ -177,7 +177,7 @@ Loop until VERDICT is CONVERGED.
 After all spec implementations are done:
 
 ```sh
-mise run -C apps/<platform> test
+mise run test
 ```
 
 Use the `verification-before-completion` skill before claiming the work is complete.
@@ -195,10 +195,10 @@ Use the `verification-before-completion` skill before claiming the work is compl
 
 Once both reviews pass and `/sdd-verify` is green, commit. See `.claude/rules/commit-discipline.md` for message style.
 
-Natural boundaries per spec applied:
+Natural boundaries per spec applied (the spec ID is the commit scope — see `.claude/rules/commit-discipline.md`):
 
-- **Test commit:** `test: add scenarios for <spec-id> on <platform>` — the failing tests that pin the spec.
-- **Implementation commit:** `feat: implement <spec-id> on <platform>` — the minimum code that makes the tests pass, with the `// SPEC: <id>` reverse pointer attached.
+- **Test commit:** `<spec-id>: add scenarios for <spec-id>` — the failing tests that pin the spec.
+- **Implementation commit:** `<spec-id>: implement <spec-id>` — the minimum code that makes the tests pass, with the `// SPEC: <id>` reverse pointer attached.
 
 Combine the pair into one commit if the diff is small and they're tightly bound. If you applied multiple specs in one session, commit each independently — never bundle "implement X and Y" into one commit.
 
@@ -232,5 +232,5 @@ Just do it inline. A failed trivial dispatch is more expensive than the work.
 
 ## Slash commands that invoke this skill
 
-- `/sdd-apply <spec-id> <platform>` — primary entry point
-- `/sdd-reconcile <platform>` — uses this skill in reverse (apply a platform's behavior to the spec, then back to other platforms)
+- `/sdd-apply <spec-id>` — primary entry point
+- `/sdd-reconcile` — ships but is inert (single package); there is no other implementation to reconcile against

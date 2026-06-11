@@ -68,7 +68,7 @@ You leave Phase 1 with a clear, evidence-backed hypothesis about what is broken 
 
 Find the pattern before fixing:
 
-1. **Find a working example.** Locate similar code elsewhere in this repo (or in the web reference implementation if you're on iOS / Android) that works.
+1. **Find a working example.** Locate similar code elsewhere in this repo — another tool's analogous command, or a shared library (`AgentCLI`, `MachOFoundation`, `RuntimeKit`, `SDKIndex`) — that works.
 2. **Read it completely.** Don't skim. Don't "adapt the pattern" — understand it.
 3. **Identify differences.** What's different between the working example and the broken code? List every difference, however small. Don't assume "that can't matter".
 4. **Understand dependencies.** What other components, settings, or environment does the working code rely on?

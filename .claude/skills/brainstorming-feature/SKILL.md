@@ -5,7 +5,7 @@ description: Use before starting any new feature or substantial change to an exi
 
 # Brainstorming a Feature
 
-Help the user shape an idea into a populated feature folder. The feature folder _is_ the spec; there is no separate plan document. By the end of this skill, `features/<NNNN>-<slug>/` should contain a NARRATIVE plus enough stories, models, view-models, flows, and errors to drive `/sdd-apply <id> web` for the reference implementation.
+Help the user shape an idea into a populated feature folder. The feature folder _is_ the spec; there is no separate plan document. By the end of this skill, `Features/<tool>/<NNNN>-<slug>/` should contain a NARRATIVE plus enough stories, models, view-models, flows, and errors to drive `/sdd-apply <id>` for the implementation.
 
 **Default workspace:** the user's current branch (typically `main`). Do not prompt for a worktree, branch, or isolation. If the user explicitly requests an isolated workspace, that's a separate skill and a separate decision.
 
@@ -19,7 +19,7 @@ Help the user shape an idea into a populated feature folder. The feature folder 
 
 - Bug fixes — go straight to systematic-debugging or test-driven-development.
 - Small changes within an existing feature (one new scenario, one error catalog entry) — just edit the relevant file directly.
-- Cross-cutting architectural decisions — those belong in `specs/ARCHITECTURE.md` and aren't features.
+- Cross-cutting architectural decisions — those belong in `Specs/ARCHITECTURE.md` and aren't features.
 
 ## The hard gate
 
@@ -52,10 +52,10 @@ If the user's prompt names multiple unrelated capabilities ("items plus calendar
 
 Before asking detailed questions, read:
 
-- `specs/ARCHITECTURE.md` — for the overall stack and constraints
-- `specs/DESIGN_SYSTEM.md` — for tokens and component vocabulary
-- `specs/CONVENTIONS.md` — refresh on ID rules and `[NEEDS CLARIFICATION]` convention
-- Any existing `features/<n>/` folders that touch the same domain — find related models and view-models to depend on
+- `Specs/ARCHITECTURE.md` — for the overall architecture and constraints
+- `Specs/STACK.md` — for the toolchain and the tool's vocabulary
+- `Specs/CONVENTIONS.md` — refresh on ID rules and `[NEEDS CLARIFICATION]` convention
+- Any existing `Features/<tool>/` folders that touch the same domain — find related models and view-models to depend on
 
 ### 3. Question round
 
@@ -84,7 +84,7 @@ Get explicit approval on the approach before writing files.
 
 ### 5. Author the folder
 
-Create `features/<NNNN>-<slug>/` if it doesn't exist (next number, kebab-case slug). Copy templates from `.claude/templates/feature/`:
+Create `Features/<tool>/<NNNN>-<slug>/` if it doesn't exist (next number, kebab-case slug, under the owning tool's namespace). Copy templates from `.claude/templates/feature/`:
 
 - **`NARRATIVE.md`** — fill in persona, situation, what we're building, why it matters, what it is not. Optionally fill the Success Criteria section.
 - **`stories/<id>.md`** — one file per user story. Use the `writing-user-stories` skill. IDs follow `story.<feature>.<capability>`. Include the Independent Test line. Each scenario gets a sub-ID `scenario.<feature>.<capability>.<short-name>`.
@@ -112,7 +112,7 @@ Fix issues inline. No need to re-review.
 Tell the user the feature folder is ready and list what was authored:
 
 ```
-Feature folder authored: features/<NNNN>-<slug>/
+Feature folder authored: Features/<tool>/<NNNN>-<slug>/
 - NARRATIVE.md
 - stories/ (N stories, M scenarios)
 - models/ (N domain models)
@@ -130,7 +130,7 @@ Wait for user feedback. If they request changes, make them and re-run the self-r
 Once approved, point the user at the next steps:
 
 - **If clarifications remain:** `/sdd-clarify <slug>` to resolve them.
-- **Otherwise:** `/sdd-analyze <slug>` to verify cross-artifact consistency, then `/sdd-apply <story-id-or-vm-id> web` to start the reference implementation. Use the `implementing-a-spec` skill from there.
+- **Otherwise:** `/sdd-analyze <slug>` to verify cross-artifact consistency, then `/sdd-apply <story-id-or-vm-id>` to start the implementation. Use the `implementing-a-spec` skill from there.
 
 ### 9. Commit
 
@@ -138,7 +138,7 @@ After the user approves the feature folder, commit the spec content. See `.claud
 
 Natural boundaries:
 
-- **One commit for the feature scaffold** when the folder is small enough to read as a single unit: `spec: scaffold features/<NNNN>-<slug>`. Body lists what's inside (N stories, M domain models, etc.).
+- **One commit for the feature scaffold** when the folder is small enough to read as a single unit: `features/<tool>/<slug>: scaffold feature folder`. Body lists what's inside (N stories, M domain models, etc.).
 - **Split by artifact kind** when the folder is large: a NARRATIVE+stories commit, then domain models, then view-models, then flows/errors. Each commit should leave the feature folder in an internally consistent state.
 
 Use `spec:` as the commit prefix for everything authored by this skill. Do not include implementation code in the same commit — that's a separate step driven by `/sdd-apply`.
@@ -149,7 +149,7 @@ Use `spec:` as the commit prefix for everything authored by this skill. Do not i
 - **Multiple-choice when possible.** Easier to answer than open-ended.
 - **YAGNI ruthlessly.** Don't add scenarios, fields, or errors that aren't necessary for the user-observable capability.
 - **Mark, don't guess.** `[NEEDS CLARIFICATION: <question>]` is the honest answer when the user hasn't specified.
-- **Web is the reference.** When in doubt about how a behavior plays out across platforms, design for the web first; iOS and Android adapt.
+- **One tool, one vertical.** Each feature belongs to exactly one tool and is realized as its own spec → failing test → implementation → review vertical. There is no reference-vs-other split to design around.
 
 ## Red flags — stop and re-scope
 
@@ -164,6 +164,6 @@ Use `spec:` as the commit prefix for everything authored by this skill. Do not i
 ## Anti-patterns
 
 - **No design before code.** Every feature goes through this skill, even small ones. The skill itself can be short for small features (a few questions, two stories, one model) — but it must be invoked.
-- **Visual companion / mockup mode.** Out of scope here. Use Chrome DevTools MCP for visual verification once code exists.
+- **Mockup mode.** Out of scope here. Verify behavior against the tool's fixtures, embedded corpus, or (for flexscope) the `SampleAppKit` oracle once code exists — see `macos-development` → Verifying.
 - **Branching ceremony.** No "create a branch first" steps. Default workspace is `main`.
 - **Plan documents.** We don't have plan.md / tasks.md. The feature folder _is_ the plan.

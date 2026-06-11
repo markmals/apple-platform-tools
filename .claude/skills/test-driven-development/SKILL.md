@@ -1,6 +1,6 @@
 ---
 name: test-driven-development
-description: Use when writing any production code in this repo — features, bug fixes, refactors, behavior changes. Write the failing test first, watch it fail, write minimal code to pass, refactor green. Tagged with the spec ID and scenario sub-ID per the platform's test conventions.
+description: Use when writing any production code in this repo — features, bug fixes, refactors, behavior changes. Write the failing test first, watch it fail, write minimal code to pass, refactor green. Tagged with the spec ID and scenario sub-ID per the repo's test conventions.
 ---
 
 # Test-Driven Development
@@ -54,41 +54,28 @@ If you're thinking "skip TDD just this once" — stop. That's rationalization.
 - Test real code; mock only what you can't control (network, time, randomness).
 - **Example or invariant?** A specific scenario ("creating with valid info shows it in the list") is an example test. A universally-quantified rule from a `domain.<entity>` spec — "name is never blank after trim", "for all valid items, encode/decode round-trips" — is a **property**, and the failing test you write first is a property test. See "Invariants get a property, not just examples" below. Don't settle for examples when the spec said "for all".
 
-```ts
-// Vitest, web
-describe("vm.items.list", () => {
-    it("[scenario.items.list.empty] shows empty state when no items exist", () => {
-        const vm = createItemsListViewModel({ initialItems: [] });
-        expect(vm.state.value).toEqual({ status: "empty", items: [] });
-    });
-});
-```
-
 ```swift
-// Swift Testing, iOS
-@Suite("vm.items.list")
-struct ItemsListViewModelTests {
-    @Test("[scenario.items.list.empty] shows empty state when no items exist")
-    func emptyState() async {
-        let vm = ItemsListViewModel(client: MockClient(returning: []))
-        await vm.load()
-        #expect(vm.status == .empty)
+// Swift Testing — the default for every tool and shared library
+@Suite("command.sdk-api.check")
+struct SdkApiCheckTests {
+    @Test("[scenario.sdk-api.check.missing] reports a missing symbol as not present")
+    func missingSymbol() throws {
+        let result = try SdkApiCheck.run(symbol: "doesNotExist", in: emptyCorpus)
+        #expect(result == .absent)
     }
 }
 ```
 
-```kt
-// kotlin.test, Android
-@Tag("spec:vm.items.list")
-class ItemsListViewModelTest {
-    @Test
-    @DisplayName("[scenario.items.list.empty] shows empty state when no items exist")
-    fun emptyState() = runTest {
-        val vm = ItemsListViewModel(MockClient(returning = emptyList()))
-        vm.load()
-        assertEquals(UiState.Empty, vm.state.value)
-    }
+```objc
+// ObjC + XCTest — RuntimeKit only (the FLEX-derived runtime core)
+// SPEC: error.flexscope.stale-node
+@implementation RuntimeNodeTests
+// [scenario.flexscope.stale-node.rejected]
+- (void)testStaleNodeIdIsRejected {
+    RuntimeNode *node = [self capturedNodeThenInvalidated];
+    XCTAssertNil([node readIvarNamed:@"_title"]);
 }
+@end
 ```
 
 ### Verify RED — watch it fail
@@ -132,25 +119,22 @@ The trigger is concrete: a `domain.<entity>` spec's **Invariants** section that 
 - round-trip → for all valid items, `decode(encode(item))` equals `item`.
 - idempotence → for all inputs, `normalize(normalize(x))` equals `normalize(x)`.
 
-```ts
-// Vitest + fast-check, web
-import { describe, it, expect } from "vitest";
-import * as fc from "fast-check";
-import { validateItem } from "./item";
-
-describe("domain.item", () => {
-    // [scenario.item.name-required] no blank-after-trim name ever validates
-    it("[scenario.item.name-required] rejects any blank-after-trim name", () => {
-        fc.assert(
-            fc.property(fc.stringOf(fc.constantFrom(" ", "\t", "\n")), (blank) => {
-                expect(validateItem({ id: "1", name: blank }).ok).toBe(false);
-            }),
-        );
-    });
-});
+```swift
+// Swift Testing + parameterized arguments
+@Suite("domain.agent-cli")
+struct ArgumentValidationTests {
+    // [scenario.agent-cli.name-required] no blank-after-trim name ever validates
+    @Test(
+        "[scenario.agent-cli.name-required] rejects any blank-after-trim name",
+        arguments: [" ", "\t", "\n", "  \t  "]
+    )
+    func rejectsBlankName(blank: String) {
+        #expect(validate(name: blank) == .invalid)
+    }
+}
 ```
 
-Per-platform property runners: **fast-check** (web/TS), **SwiftCheck** or parameterized `@Test(arguments:)` (Apple), **kotest-property** (Android), **FsCheck** (C#), **proptest** (Rust).
+Property runners for this repo: parameterized `@Test(arguments:)` in Swift Testing for enumerable cases, **SwiftCheck** when you need generated inputs over a domain.
 
 Discipline that still applies:
 
@@ -174,13 +158,12 @@ Test-first forces you to **see the test fail**, which proves the test actually t
 
 ## Tagging discipline
 
-Every test in this repo carries the spec ID it verifies. The exact form per platform is in `apps/<platform>/CLAUDE.md` and `specs/CONVENTIONS.md`. Summary:
+Every test in this repo carries the spec ID it verifies. The exact form is in `Specs/CONVENTIONS.md`. Summary:
 
-| Platform              | Where the spec ID lives                     | Where the scenario sub-ID lives              |
-| --------------------- | ------------------------------------------- | -------------------------------------------- |
-| Web (Vitest)          | `describe('vm.items.list', ...)` block name | `it('[scenario.<id>] ...')` test name prefix |
-| iOS (Swift Testing)   | `@Suite("vm.items.list")`                   | `@Test("[scenario.<id>] ...")` display name  |
-| Android (kotlin.test) | `@Tag("spec:vm.items.list")`                | `@DisplayName("[scenario.<id>] ...")`        |
+| Test framework               | Where the spec ID lives                     | Where the scenario sub-ID lives                       |
+| ---------------------------- | ------------------------------------------- | ----------------------------------------------------- |
+| Swift Testing (every target) | `@Suite("command.sdk-api.check")`           | `@Test("[scenario.<id>] ...")` display name           |
+| ObjC + XCTest (RuntimeKit)   | `// SPEC: <id>` comment on the test class   | `// [scenario.<id>]` comment above the test method    |
 
 If a test doesn't carry these tags, drift detection can't find it. Don't skip the tags.
 
