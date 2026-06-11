@@ -16,7 +16,7 @@ description = "Lint Swift sources (swift-format, strict)"
 run = "swift format lint --strict --recursive Sources Tests"
 
 [tasks.build]
-description = "Build the CLI, boot dylib, and FLEX-mac (debug)"
+description = "Build all tools and libraries (debug)"
 run = "swift build"
 
 [tasks.test]
