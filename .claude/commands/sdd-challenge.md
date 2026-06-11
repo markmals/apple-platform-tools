@@ -1,13 +1,13 @@
 ---
-description: Adversarially review a spec's implementation on a platform — try to break it.
-argument-hint: <spec-id> <platform>
+description: Adversarially review a spec's implementation — try to break it.
+argument-hint: <spec-id>
 ---
 
 # /sdd-challenge $ARGUMENTS
 
-You are running a standalone adversarial review of one spec on one platform: `$ARGUMENTS`.
+You are running a standalone adversarial review of one spec: `$ARGUMENTS`.
 
-Argument format: `<spec-id> <platform>` where `<platform>` is one of your project's platforms (`web`, `website`, `ios`, `android`, `windows`, `linux`, `cli`, `tui`, or `convex` — whichever survived `/setup`).
+Argument format: `<spec-id>` — a stable ID from a spec's frontmatter (e.g. `error.flexscope.stale-node`).
 
 ## Intent
 
@@ -20,20 +20,20 @@ This is the same third stage `implementing-a-spec` runs, invoked directly. It us
 ## Steps
 
 1. **Locate and read the spec.** Find the file whose frontmatter `id:` matches the spec ID. Read it in full, plus its `depends-on` chain — you need the invariants and every Gherkin scenario to judge fidelity.
-2. **Locate the implementation and tests.** `rg "SPEC: <spec-id>"` in the target platform's directory (`apps/<platform>/` or `services/convex/`). Record the implementing files; find the tests tagged with the spec ID and its scenario sub-IDs.
-    - **No reverse pointer found?** The spec isn't implemented on this platform. Report `INSUFFICIENT DATA — <spec-id> has no implementation on <platform>` and stop. There is nothing to refute.
-3. **Confirm the suite is green first.** Run the platform's tests for this spec (`mise run -C apps/<platform> test`, filtered to the spec ID where the runner allows). If tests are **red**, stop and report it — a failing suite is a different problem; route it to `systematic-debugging`, not to the adversary. The refutational pass assumes code that already passes its own checks, exactly as the third stage runs only after the two confirmatory reviews are ✅.
+2. **Locate the implementation and tests.** `rg "SPEC: <spec-id>" Sources/`. Record the implementing files; find the tests tagged with the spec ID and its scenario sub-IDs.
+    - **No reverse pointer found?** The spec isn't implemented. Report `INSUFFICIENT DATA — <spec-id> has no implementation` and stop. There is nothing to refute.
+3. **Confirm the suite is green first.** Run the tests for this spec (`swift test`, filtered to the spec ID where the runner allows). If tests are **red**, stop and report it — a failing suite is a different problem; route it to `systematic-debugging`, not to the adversary. The refutational pass assumes code that already passes its own checks, exactly as the third stage runs only after the two confirmatory reviews are ✅.
 4. **Dispatch the adversary.** Spawn a fresh subagent on a **different model** from whatever built the code — default `model: "opus"` — that never saw the implementation written. Tell it to read `.claude/skills/adversarial-review/SKILL.md` and apply it. Paste in: the full spec text, the implementing files, and the test files. Do not say "go read them" — curate the context.
 5. **Relay the verdict** in the skill's output format (below). Verify the adversary's claimed defects carry a concrete reproduction; drop any finding it couldn't actually trace (the skill forbids fabricated flaws — hold it to that).
 6. **Act on the verdict:**
     - **BROKEN** → surface the defects. Do **not** auto-fix. Offer to remediate through the normal flow.
-    - **SPEC GAPS** → surface to the user; route to a spec edit (`/sdd-reconcile` or a deliberate spec change), never a silent code change.
+    - **SPEC GAPS** → surface to the user; route to a deliberate spec edit, never a silent code change.
     - **CONVERGED** → report clean. The adversary tried all five lenses and found nothing real.
 
 ## Output format
 
 ```
-ADVERSARIAL REVIEW — <spec-id> on <platform>
+ADVERSARIAL REVIEW — <spec-id>
 Intent: <one-line summary from the spec>
 Suite: GREEN (n tests)
 
@@ -59,4 +59,4 @@ VERDICT: BROKEN (n defects) | CONVERGED
 
 ## Implementation status
 
-Manual and agent-driven, like the other `sdd-*` commands. `rg` to locate the reverse pointers, the platform test runner to confirm green, and a dispatched subagent to run the `adversarial-review` skill. No aggregation tooling yet.
+Manual and agent-driven, like the other `sdd-*` commands. `rg` to locate the reverse pointers, `swift test` to confirm green, and a dispatched subagent to run the `adversarial-review` skill. No aggregation tooling yet.

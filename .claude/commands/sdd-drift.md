@@ -1,26 +1,26 @@
 ---
-description: List spec IDs whose implementation has drifted from the spec on a platform.
-argument-hint: <platform>
+description: List spec IDs whose implementation has drifted from the spec.
+argument-hint: (no arguments)
 ---
 
-# /sdd-drift $ARGUMENTS
+# /sdd-drift
 
-You are detecting drift on a single platform: `$ARGUMENTS` (one of `web`, `website`, `ios`, `android`, `windows`, `linux`, `cli`, `tui`, `convex`).
+You are detecting drift across the package.
 
 ## Intent
 
 Identify specs and implementations that are out of sync. Drift takes several forms:
 
 1. **Spec changed after impl was last touched.** The spec's `mtime` is newer than the most recent `mtime` of any file referencing it. Likely the impl needs updating.
-2. **Impl changed without spec update.** The impl files referencing a spec have all been touched after the spec, _and_ their behavior may have changed. Likely the spec needs updating (use `/sdd-reconcile`).
+2. **Impl changed without spec update.** The impl files referencing a spec have all been touched after the spec, _and_ their behavior may have changed. Likely the spec needs updating.
 3. **Orphaned impl.** A file references a spec ID that no longer exists.
-4. **Unimplemented spec.** A spec exists with no reverse pointer on this platform (and is not marked optional for this platform).
-5. **Untagged impl.** A file in the platform's source tree has no `// SPEC:` annotation and is not in the platform's allowlist of "manual" code.
+4. **Unimplemented spec.** A spec exists with no reverse pointer anywhere in `Sources/`.
+5. **Untagged impl.** A file in `Sources/` has no `// SPEC:` annotation and is not in the allowlist of "manual" code.
 
 ## Steps
 
-1. **Walk all spec files** under `specs/` and `features/`. Build a map of `id → {file_path, mtime, applies_to_platforms}`.
-2. **Walk the target platform's source tree.** For each source file:
+1. **Walk all spec files** under `Specs/` and `Features/`. Build a map of `id → {file_path, mtime}`.
+2. **Walk `Sources/`.** For each source file:
     - If it has `// SPEC: <id>`, record the pair.
     - If it has `// SPEC: manual`, ignore it.
     - If it has neither, flag as untagged (case 5).
@@ -30,8 +30,8 @@ Identify specs and implementations that are out of sync. Drift takes several for
 ## Output format
 
 ```
-DRIFT REPORT — platform: <platform>
-====================================
+DRIFT REPORT
+============
 
 [1] Spec changed after impl (N)
   - <spec-id>  spec mtime: <ts>  newest impl mtime: <ts>

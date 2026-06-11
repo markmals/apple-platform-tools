@@ -9,12 +9,12 @@ You are analyzing a single feature for cross-artifact consistency: `$ARGUMENTS`.
 
 Argument forms:
 
-- A feature slug: `0001-managing-items`
+- A feature slug: `headerdump/0001-dump-framework`
 - A feature ID: `0001`
 
 ## Intent
 
-A non-destructive consistency check across all spec files in `features/<NNNN>-<slug>/`. Identify gaps, contradictions, and dangling references **without modifying anything**. Inspired by spec-kit's `/speckit.analyze`.
+A non-destructive consistency check across all spec files in `Features/<tool>/<NNNN>-<slug>/`. Identify gaps, contradictions, and dangling references **without modifying anything**. Inspired by spec-kit's `/speckit.analyze`.
 
 ## Operating constraint
 
@@ -26,14 +26,14 @@ A non-destructive consistency check across all spec files in `features/<NNNN>-<s
 
 - Does `NARRATIVE.md` exist and have substantive content (not just placeholder comments)?
 - Does `stories/` contain at least one story?
-- For every entity referenced in the narrative or stories, does `models/` contain a corresponding `domain.<entity>.md`? (Or is it expected to be cross-cutting in `specs/models/`?)
+- For every entity referenced in the narrative or stories, does `models/` contain a corresponding `domain.<entity>.md`? (Or is it expected to be cross-cutting in `Specs/models/`?)
 - For every view referenced in stories/use-cases/flows, does `view-models/` contain a corresponding `vm.<feature>.<view>.md`?
 - For every error mentioned in stories, does `errors/` contain a matching `error.<domain>.<kind>.md`?
 
 ### 2. Reference integrity
 
-- Walk every `depends-on:` entry in every spec file's frontmatter. Does the referenced ID exist somewhere in `features/` or `specs/`?
-- Walk every inline reference (e.g. "see `domain.item`") in spec body text. Does the referenced ID exist?
+- Walk every `depends-on:` entry in every spec file's frontmatter. Does the referenced ID exist somewhere in `Features/` or `Specs/`?
+- Walk every inline reference (e.g. "see `domain.agent-cli`") in spec body text. Does the referenced ID exist?
 
 ### 3. Story / scenario consistency
 
@@ -56,7 +56,7 @@ A non-destructive consistency check across all spec files in `features/<NNNN>-<s
 
 ### 6. Constitutional compliance
 
-(See `specs/CONVENTIONS.md`.)
+(See `Specs/CONVENTIONS.md`.)
 
 - Every spec file has frontmatter with `id`, `kind`.
 - ID matches filename stem (with dots).
@@ -73,29 +73,29 @@ Coverage
 --------
 ✅ NARRATIVE.md present (N words)
 ❌ MISSING: stories/ (no story files)
-✅ models/ has 2 entries: domain.item, domain.item-group
+✅ models/ has 2 entries: domain.framework, domain.header-set
 ⚠ models/ missing: domain.<entity> referenced in story.<id>
 
 Reference integrity
 -------------------
-❌ story.item.create depends-on: domain.item (NOT FOUND in features/0001 or specs/)
+❌ story.headerdump.dump-framework depends-on: domain.framework (NOT FOUND in Features/headerdump/0001 or Specs/)
 ✅ all other depends-on references resolve
 
 Story / scenario consistency
 ----------------------------
-⚠ story.item.create scenario 2 missing scenario sub-ID
+⚠ story.headerdump.dump-framework scenario 2 missing scenario sub-ID
 ✅ all other scenarios have IDs and are unique
 
 Outstanding clarifications
 --------------------------
 ⚠ 3 [NEEDS CLARIFICATION] markers remaining (run /sdd-clarify <feature>):
-  - features/0001/stories/item.create.md:14 — auth provider not specified
-  - features/0001/models/item.md:22 — duplicate-email handling
-  - features/0001/errors/item.duplicate-email.md:9 — recovery affordance
+  - Features/headerdump/0001/stories/dump-framework.md:14 — symbol-table source not specified
+  - Features/headerdump/0001/models/framework.md:22 — re-export handling
+  - Features/headerdump/0001/errors/headerdump.missing-binary.md:9 — recovery affordance
 
 View-model / domain alignment
 -----------------------------
-✅ vm.items.list depends on domain.item (exists)
+✅ vm.headerdump.dump depends on domain.framework (exists)
 
 Constitutional compliance
 -------------------------
@@ -105,7 +105,7 @@ Summary
 -------
 Findings:  2 critical, 1 warning, 3 clarifications
 Status:    NOT READY for /sdd-apply
-Suggested next action: /sdd-clarify 0001-managing-items
+Suggested next action: /sdd-clarify headerdump/0001-dump-framework
 ```
 
 ## Severity rules
