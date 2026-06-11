@@ -22,3 +22,7 @@ run = "swift build"
 [tasks.test]
 description = "Run the Swift Testing suite"
 run = "swift test"
+
+[tasks.install]
+description = "Build, ad-hoc sign, and install the distributable CLIs to ~/.local/bin"
+run = "scripts/install-tools.sh"
