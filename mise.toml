@@ -8,8 +8,8 @@ experimental = true
 # `brew install swift-format` if `swift format` isn't on your toolchain.
 
 [tasks.fmt]
-description = "Format Swift sources; pass file paths, or omit to format the tree"
-run = "swift format --in-place --recursive {{arg(name='paths', var=true, default='Sources Tests')}}"
+description = "Format Swift sources; pass file paths, or omit to format Sources and Tests"
+run = "swift format --in-place --recursive ${@:-Sources Tests}"
 
 [tasks.lint]
 description = "Lint Swift sources (swift-format, strict)"
