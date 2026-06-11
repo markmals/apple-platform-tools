@@ -1,5 +1,5 @@
 ---
-id: error.<domain>.<kind>
+id: error.<tool>.<kind>
 kind: error
 depends-on: []
 ---
@@ -7,37 +7,38 @@ depends-on: []
 # <Error title>
 
 <!--
-  An error spec describes a USER-OBSERVABLE failure mode and the recovery
-  affordance the product offers. It is not an exception class, an HTTP
-  status, or a backend error code — it is the user's experience of the
-  failure.
+  An error spec describes an OBSERVABLE failure mode and the recovery
+  affordance the tool offers. It is not an exception class or an internal
+  error code — it is the agent's (or user's) experience of the failure:
+  the structured message on stderr and the exit code.
 
-  Each platform implements this idiomatically. What the user sees and what
-  they can do about it must converge across platforms.
+  See the `AgentCLI` contract for the shared error/exit-code shape.
 -->
 
 ## When this happens
 
-<!-- 1–2 sentences: under what conditions does the user encounter this? -->
+<!-- 1–2 sentences: under what conditions does the caller encounter this? -->
 
-## What the user sees
+## What the caller sees
 
-<!-- The user-visible message or affordance. Plain language. -->
+<!-- The structured error on stderr and the exit code. -->
 
 > "<Example message text>"
 
-## What the user can do
+Exit code: `<2–8>`
 
-<!-- Recovery affordances. -->
+## What the caller can do
+
+<!-- Recovery affordances — what the agent or user does next. -->
 
 - <action> — <what it does>
 - <action> — <what it does>
 
 ## Underlying cause (informational)
 
-<!-- For implementers: what technical condition triggers this user-visible
-     error. NOT part of the spec contract — clients can map any number of
-     internal conditions to this error. -->
+<!-- For implementers: what technical condition triggers this error. NOT part
+     of the spec contract — the implementation can map any number of internal
+     conditions to this error. -->
 
 - <condition>
 

@@ -1,5 +1,5 @@
 ---
-id: narrative.<feature-slug>
+id: narrative.<tool>.<feature-slug>
 kind: narrative
 ---
 
@@ -15,7 +15,7 @@ kind: narrative
     - What value does the user get?
 
   Derive this from interviews, product input, or prior art. Avoid implementation
-  details — those belong in the architecture or platform CLAUDE.md files.
+  details — those belong in `Specs/ARCHITECTURE.md` or the root `CLAUDE.md`.
 -->
 
 ## Who this is for

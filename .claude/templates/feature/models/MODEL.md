@@ -11,8 +11,9 @@ depends-on: []
   It does NOT describe storage, serialization, or transport — those are
   implementation concerns.
 
-  Each platform realizes this model in its own type system. The names and
-  invariants are stable; the realization is idiomatic.
+  The Swift (or ObjC) realization is idiomatic; the names and invariants are
+  stable. A model used by ≥ 2 tools is promoted to `Specs/models/<id>.md`
+  (its ID does not change). See `Specs/CONVENTIONS.md`.
 -->
 
 ## Shape

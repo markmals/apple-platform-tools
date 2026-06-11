@@ -1,5 +1,5 @@
 ---
-id: vm.<feature>.<view>
+id: vm.<tool>.<view>
 kind: view-model
 depends-on: []
 ---
@@ -8,10 +8,11 @@ depends-on: []
 
 <!--
   A view model defines the state, actions, transitions, and derived values
-  for one user-facing view. It is the primary unit of behavioral spec —
-  most behavioral tests on every platform target a view model.
+  for one stateful surface. It is a behavioral spec for logic that holds
+  state across interactions.
 
-  This is the WHAT. Each platform's realization is the HOW.
+  This is the WHAT; the Swift realization is the HOW. View models are rare in
+  this repo — most tools are stateless command verbs. See `Specs/CONVENTIONS.md`.
 -->
 
 ## Purpose

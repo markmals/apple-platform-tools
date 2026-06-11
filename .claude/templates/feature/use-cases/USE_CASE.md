@@ -1,5 +1,5 @@
 ---
-id: usecase.<feature>.<scenario>
+id: usecase.<tool>.<scenario>
 kind: use-case
 depends-on: []
 ---
@@ -25,7 +25,7 @@ depends-on: []
 
 ## Actor
 
-<!-- Who is doing this — same persona as in the relevant story. -->
+<!-- Who is doing this — usually the coding agent, as in the relevant story. -->
 
 ## Preconditions
 

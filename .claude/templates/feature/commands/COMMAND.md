@@ -1,22 +1,23 @@
 ---
-id: command.<verb>
+id: command.<tool>.<verb>
 kind: command
 depends-on: []
 ---
 
-# `flexscope <verb>` — <short title>
+# `<tool> <verb>` — <short title>
 
 <!--
-  A command spec defines the behavior of ONE flexscope CLI verb: its inputs,
-  the IPC op it issues, the projection it emits, its states, and its exit code.
-  It is the pure-core decision logic the CLI wraps — testable without injection
-  by feeding it captured data. The coding agent is the user; keep it machine-first.
+  A command spec defines the behavior of ONE CLI verb on one tool: its inputs,
+  the work it does, the projection it emits, its states, and its exit code.
+  It is the pure-core decision logic the CLI wraps — testable against checked-in
+  fixtures or a corpus rather than live state. The coding agent is the user;
+  keep it machine-first. See the `AgentCLI` contract for the shared JSON/exit-code shape.
 -->
 
 ## Synopsis
 
 ```
-flexscope <verb> <args> [--flag …]
+<tool> <verb> <args> [--flag …]
 ```
 
 ## Inputs
@@ -28,8 +29,8 @@ flexscope <verb> <args> [--flag …]
 
 ## Behavior
 
-<!-- Step by step: resolve → issue IPC op → project → emit. Reference the op in
-     domain.ipc and the data shape in domain.node; don't restate them. -->
+<!-- Step by step: resolve inputs → do the work → project → emit. Reference the
+     relevant domain model(s) for the data shape; don't restate them. -->
 
 1. <step>
 2. <step>
@@ -37,8 +38,9 @@ flexscope <verb> <args> [--flag …]
 ## Output
 
 <!-- The exact stdout shape. A JSON object for scalar queries; JSON-Lines for
-     streams. Reference domain.node for node fields. Deterministic: stable key
-     order, z-order children, fixed precision, no addresses/timestamps by default. -->
+     streams. Reference the relevant domain model for field definitions.
+     Deterministic: stable key order, fixed precision, no addresses/timestamps
+     by default — see the AgentCLI contract. -->
 
 ```jsonc
 { ... }

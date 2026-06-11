@@ -1,5 +1,5 @@
 ---
-id: flow.<feature>.<action>
+id: flow.<tool>.<action>
 kind: flow
 depends-on: []
 ---
