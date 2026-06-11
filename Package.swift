@@ -13,6 +13,7 @@ let package = Package(
     .executable(name: "sdk-search", targets: ["sdk-search"]),
     .executable(name: "headerdump", targets: ["headerdump"]),
     .executable(name: "redump", targets: ["redump"]),
+    .library(name: "RuntimeKit", targets: ["RuntimeKit"]),
   ],
   dependencies: [
     .package(url: "https://github.com/apple/swift-argument-parser", from: "1.5.0"),
@@ -120,5 +121,12 @@ let package = Package(
         .product(name: "ArgumentParser", package: "swift-argument-parser"),
       ]
     ),
+
+    // ── Live-runtime cluster ────────────────────────────────────────
+    // RuntimeKit: a Swift reimplementation of FLEX's headless reflection core +
+    // AppKit walker. The pure type-encoding parser is the first unit; the ObjC
+    // runtime / AppKit wrappers and the RuntimeKitC native floor follow.
+    .target(name: "RuntimeKit"),
+    .testTarget(name: "RuntimeKitTests", dependencies: ["RuntimeKit", "TestSupport"]),
   ]
 )
