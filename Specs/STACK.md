@@ -72,11 +72,12 @@ Apple publishes no `/llms.txt` for these frameworks — WebFetch the canonical d
 
 | Concern | Choice |
 | --- | --- |
-| Reflection engine | FLEX's unmodified ObjC reflection core (`FLEXMirror`/`FLEXProperty`/`FLEXIvar`/`FLEXMethod`, `FLEXRuntimeUtility`, `FLEXHeapEnumerator`) — extracted headless into `RuntimeKit` |
-| View walker | `FLEXAppKitWalker` — `NSApp` → `NSWindow` → `NSView`/`CALayer`, frames, `NSFont`/`NSColor` decomposition, constraints |
+| Reflection engine | **Swift** reimplementation of FLEX's headless reflection core (mirror / property / ivar / method / protocol / type-encoding parser over `<objc/runtime.h>`), in `RuntimeKit` — the FLEX ObjC is the spec, not the artifact |
+| Native floor | `RuntimeKitC` (ObjC/C++) — the ~600 LOC that can't be Swift: pointer-validity probing, Swift-class `isa` decoding, `malloc_zone` heap enumeration |
+| View walker | Swift `AppKitWalker` (ported from `FLEXAppKitWalker`) — `NSApp` → `NSWindow` → `NSView`/`CALayer`, frames, `NSFont`/`NSColor` decomposition, constraints → immutable `Sendable` snapshots |
 | Frameworks read | [AppKit](https://developer.apple.com/documentation/appkit) · [Core Animation](https://developer.apple.com/documentation/quartzcore) |
 | SwiftUI surface | [`NSHostingView`](https://developer.apple.com/documentation/swiftui/nshostingview) (read the emitted AppKit/CALayer scaffold only) |
-| Bootstrap | `FlexScopeBoot` — injected ObjC dylib, `__attribute__((constructor))` starts a headless server |
+| Bootstrap | `FlexScopeBoot` — the one native trigger: an injected ObjC dylib whose `__attribute__((constructor))` `dlopen`s the Swift `FlexScopeServer` (so the Swift runtime initializes via a normal `dlopen`, not via injection) |
 | IPC | Unix domain socket, newline-delimited JSON, versioned schema |
 | Concurrency | Swift Concurrency (CLI); GCD main-thread marshaling (server — AppKit reads must run on the target's main thread) |
 | Injection | `DYLD_INSERT_LIBRARIES` relaunch (primary); MIP-style `launchservicesd` hook + Mach thread-hijack (first-party, fragile) |
