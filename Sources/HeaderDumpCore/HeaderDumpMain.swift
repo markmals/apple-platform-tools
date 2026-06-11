@@ -1,3 +1,4 @@
+import BinaryFoundation
 import Dispatch
 import Foundation
 import MachOKit
@@ -15,12 +16,6 @@ import ObjCDump
   import ObjectiveC
   import HeaderDumpRuntimeObjC
 #endif
-
-protocol FileExistenceChecking {
-  func fileExists(atPath: String) -> Bool
-}
-
-extension FileManager: FileExistenceChecking {}
 
 protocol SwiftInterfaceBuilding {
   func prepare() async throws
@@ -463,157 +458,19 @@ private func dumpImage(
   )
 }
 
+/// The dyld runtime-root candidates headerdump honors, read from the environment
+/// (simulator orchestration sets these). Passed to BinaryFoundation, which is env-free.
+private func dyldRuntimeRoots() -> [String] {
+  let env = ProcessInfo.processInfo.environment
+  return [
+    env["PH_RUNTIME_ROOT"],
+    env["DYLD_ROOT_PATH"],
+    env["SIMCTL_CHILD_DYLD_ROOT_PATH"],
+  ].compactMap { $0 }
+}
+
 private func loadMachOFile(url: URL, options: DumpOptions) -> MachOFile? {
-  if options.useSharedCache, let cached = loadFromSharedCache(imagePath: url.path) {
-    return cached
-  }
-  do {
-    let file = try loadFromFile(url: url)
-    switch file {
-    case .machO(let machO):
-      return isSupported(machO) ? machO : nil
-    case .fat(let fat):
-      let machOFiles = try fat.machOFiles()
-      if let match = machOFiles.first(where: { isSupported($0) }) {
-        return match
-      }
-      return nil
-    }
-  } catch {
-    if options.useSharedCache {
-      return loadFromSharedCache(imagePath: url.path)
-    }
-    return nil
-  }
-}
-
-private func isSupported(_ machO: MachOFile) -> Bool {
-  switch machO.header.cpuType {
-  case .arm64, .x86_64:
-    return true
-  default:
-    return false
-  }
-}
-
-private func loadFromSharedCache(imagePath: String) -> MachOFile? {
-  let cachePath = sharedCachePath()
-  guard let fullCache = try? FullDyldCache(url: URL(fileURLWithPath: cachePath)) else {
-    return nil
-  }
-  let candidates = normalizedCacheImagePaths(for: imagePath)
-  if let match = fullCache.machOFiles().first(where: { candidates.contains($0.imagePath) }) {
-    return match
-  }
-  for candidate in candidates {
-    if let match = fullCache.machOFiles().first(where: { $0.imagePath.hasSuffix(candidate) }) {
-      return match
-    }
-  }
-  return nil
-}
-
-func normalizedCacheImagePaths(for path: String) -> [String] {
-  var results: [String] = [path]
-
-  // On macOS, cache entries for frameworks frequently use versioned image paths
-  // (e.g. ".../Foo.framework/Versions/A/Foo"), while callers may provide
-  // ".../Foo.framework/Foo". Include common versioned variants so cache lookup
-  // still resolves when the unversioned symlink target is absent.
-  if let frameworkRange = path.range(of: ".framework/"), !path.contains(".framework/Versions/") {
-    let frameworkPrefix = String(path[..<frameworkRange.upperBound])
-    let imageName = URL(fileURLWithPath: path).lastPathComponent
-    if !imageName.isEmpty {
-      results.append(frameworkPrefix + "Versions/Current/" + imageName)
-      results.append(frameworkPrefix + "Versions/A/" + imageName)
-      results.append(frameworkPrefix + "Versions/B/" + imageName)
-      results.append(frameworkPrefix + "Versions/C/" + imageName)
-    }
-  }
-
-  let env = ProcessInfo.processInfo.environment
-  let rootCandidates = [
-    env["PH_RUNTIME_ROOT"],
-    env["DYLD_ROOT_PATH"],
-    env["SIMCTL_CHILD_DYLD_ROOT_PATH"],
-  ].compactMap { $0 }
-
-  for runtimeRoot in rootCandidates {
-    let trimmedRoot = runtimeRoot.hasSuffix("/") ? String(runtimeRoot.dropLast()) : runtimeRoot
-    if path.hasPrefix(trimmedRoot + "/") {
-      let suffix = String(path.dropFirst(trimmedRoot.count))
-      if !suffix.isEmpty {
-        results.append(suffix)
-      }
-    }
-  }
-
-  if let range = path.range(of: "/System/Library/") {
-    results.append(String(path[range.lowerBound...]))
-  }
-  if let range = path.range(of: "/usr/lib/") {
-    results.append(String(path[range.lowerBound...]))
-  }
-
-  var unique: [String] = []
-  for item in results where !unique.contains(item) {
-    unique.append(item)
-  }
-  return unique
-}
-
-func sharedCachePath(fileManager: FileExistenceChecking = FileManager.default) -> String {
-  let env = ProcessInfo.processInfo.environment
-  let rootCandidates = [
-    env["PH_RUNTIME_ROOT"],
-    env["DYLD_ROOT_PATH"],
-    env["SIMCTL_CHILD_DYLD_ROOT_PATH"],
-  ].compactMap { $0 }
-
-  for runtimeRoot in rootCandidates {
-    let simArm64eCandidate = URL(fileURLWithPath: runtimeRoot)
-      .appendingPathComponent("System/Library/Caches/com.apple.dyld/dyld_sim_shared_cache_arm64e")
-    if fileManager.fileExists(atPath: simArm64eCandidate.path) {
-      return simArm64eCandidate.path
-    }
-
-    let simArm64Candidate = URL(fileURLWithPath: runtimeRoot)
-      .appendingPathComponent("System/Library/Caches/com.apple.dyld/dyld_sim_shared_cache_arm64")
-    if fileManager.fileExists(atPath: simArm64Candidate.path) {
-      return simArm64Candidate.path
-    }
-
-    let candidate = URL(fileURLWithPath: runtimeRoot)
-      .appendingPathComponent("System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64e")
-    if fileManager.fileExists(atPath: candidate.path) {
-      return candidate.path
-    }
-
-    let arm64Candidate = URL(fileURLWithPath: runtimeRoot)
-      .appendingPathComponent("System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64")
-    if fileManager.fileExists(atPath: arm64Candidate.path) {
-      return arm64Candidate.path
-    }
-  }
-
-  let primary = "/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64e"
-  if fileManager.fileExists(atPath: primary) {
-    return primary
-  }
-
-  let candidates = [
-    "/System/Volumes/Preboot/Cryptexes/OS/System/Library/dyld/dyld_shared_cache_arm64e",
-    "/System/Volumes/Preboot/Cryptexes/OS/System/Library/dyld/dyld_shared_cache_arm64",
-    "/System/Volumes/Preboot/Cryptexes/OS/System/Library/dyld/dyld_shared_cache_x86_64",
-    "/private/var/db/dyld/dyld_shared_cache_arm64e",
-    "/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64",
-    "/private/var/db/dyld/dyld_shared_cache_x86_64",
-    "/private/var/db/dyld/dyld_shared_cache_arm64",
-  ]
-  for candidate in candidates where fileManager.fileExists(atPath: candidate) {
-    return candidate
-  }
-  return primary
+  MachOImage.load(at: url, useSharedCache: options.useSharedCache, runtimeRoots: dyldRuntimeRoots())
 }
 
 func writeDirectory(for imagePath: String, outputRoot: URL, options: DumpOptions) -> URL {
@@ -1421,7 +1278,7 @@ private func dumpObjC(
 
   func runtimeFallbackTargetImagePaths(for imagePath: String) -> Set<String> {
     Set(
-      normalizedCacheImagePaths(for: imagePath).map {
+      MachOImage.normalizedCacheImagePaths(for: imagePath, runtimeRoots: dyldRuntimeRoots()).map {
         normalizedImagePath(stripRuntimeRoot(from: $0))
       }
     )

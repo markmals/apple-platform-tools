@@ -63,12 +63,24 @@ let package = Package(
     ),
 
     // ── Static-analysis cluster ─────────────────────────────────────
+    // BinaryFoundation: Mach-O / dyld-shared-cache / universal-binary image loading,
+    // on the MachOKit family. Shared by headerdump and (later) redump.
+    .target(
+      name: "BinaryFoundation",
+      dependencies: [.product(name: "MachOKit", package: "MachOKit")]
+    ),
+    .testTarget(
+      name: "BinaryFoundationTests",
+      dependencies: [
+        "BinaryFoundation", "TestSupport", .product(name: "MachOKit", package: "MachOKit"),
+      ]
+    ),
     // headerdump: private framework header extraction from Mach-O / the dyld cache.
-    // (MachOFoundation will be factored out of HeaderDumpCore's image-loading seam.)
     .target(name: "HeaderDumpRuntimeObjC", publicHeadersPath: "include"),
     .target(
       name: "HeaderDumpCore",
       dependencies: [
+        "BinaryFoundation",
         .target(name: "HeaderDumpRuntimeObjC", condition: .when(platforms: [.macOS, .iOS])),
         .product(name: "MachOKit", package: "MachOKit"),
         .product(name: "MachOObjCSection", package: "MachOObjCSection"),

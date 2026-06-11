@@ -1,3 +1,4 @@
+import BinaryFoundation
 import Foundation
 import MachOKit
 import TestSupport
@@ -415,26 +416,6 @@ struct HeaderDumpCLITests {
     #expect(normalizePath("/tmp//foo///bar") == "/tmp/foo/bar")
   }
 
-  @Test(.scenario("scenario.headerdump.dump-framework.shared-cache"))
-  func `includes system and versioned candidates in cache image paths`() {
-    let runtimeRoot = "/Runtime"
-    let path = "/Runtime/System/Library/Frameworks/Foo.framework/Foo"
-    let paths = withEnvironment(["PH_RUNTIME_ROOT": runtimeRoot]) {
-      normalizedCacheImagePaths(for: path)
-    }
-    #expect(paths.first == path)
-    #expect(paths.contains("/System/Library/Frameworks/Foo.framework/Foo"))
-    #expect(paths.contains("/Runtime/System/Library/Frameworks/Foo.framework/Versions/Current/Foo"))
-    #expect(paths.contains("/Runtime/System/Library/Frameworks/Foo.framework/Versions/A/Foo"))
-    #expect(Set(paths).count == paths.count)
-
-    let usrPath = "/Runtime/usr/lib/libobjc.A.dylib"
-    let usrPaths = withEnvironment(["PH_RUNTIME_ROOT": runtimeRoot]) {
-      normalizedCacheImagePaths(for: usrPath)
-    }
-    #expect(usrPaths.contains("/usr/lib/libobjc.A.dylib"))
-  }
-
   #if canImport(ObjectiveC)
     @Test func `includes versioned candidates in runtime fallback target paths`() {
       let imagePath = "/System/Library/Frameworks/Foo.framework/Foo"
@@ -586,23 +567,6 @@ struct HeaderDumpCLITests {
     #expect(isSaneObjCTypeName("") == false)
     #expect(isSaneObjCTypeName("Bad\u{000C}") == false)
     #expect(isSaneObjCTypeName("\u{FFFD}") == false)
-  }
-
-  @Test(.scenario("scenario.headerdump.dump-framework.shared-cache"))
-  func `picks the shared cache path via the injected file manager`() {
-    let runtimeRoot = "/Runtime"
-    let simCache = "/Runtime/System/Library/Caches/com.apple.dyld/dyld_sim_shared_cache_arm64e"
-    let fake = FakeFileManager(existing: [simCache])
-    let resolved = withEnvironment(["PH_RUNTIME_ROOT": runtimeRoot]) {
-      sharedCachePath(fileManager: fake)
-    }
-    #expect(resolved == simCache)
-
-    let empty = FakeFileManager(existing: [])
-    let fallback = withEnvironment(["PH_RUNTIME_ROOT": nil]) {
-      sharedCachePath(fileManager: empty)
-    }
-    #expect(fallback == "/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64e")
   }
 
   @Test func `resolves the bundle executable via the injected file manager`() {
