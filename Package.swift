@@ -20,7 +20,9 @@ let package = Package(
     // ── Shared spine ────────────────────────────────────────────────
     // SPEC: domain.agent-cli — the deterministic JSON / exit-code contract every tool obeys.
     .target(name: "AgentCLI"),
-    .testTarget(name: "AgentCLITests", dependencies: ["AgentCLI"]),
+    // Shared test-only helpers (the .spec / .scenario association traits).
+    .target(name: "TestSupport", path: "Tests/Support"),
+    .testTarget(name: "AgentCLITests", dependencies: ["AgentCLI", "TestSupport"]),
 
     // ── SDK-knowledge cluster ───────────────────────────────────────
     // sdk-api: SDK symbol existence + availability over Swift symbol graphs.
@@ -28,7 +30,7 @@ let package = Package(
       name: "SymbolGraphIndex",
       dependencies: [.product(name: "Subprocess", package: "swift-subprocess")]
     ),
-    .testTarget(name: "SymbolGraphIndexTests", dependencies: ["SymbolGraphIndex"]),
+    .testTarget(name: "SymbolGraphIndexTests", dependencies: ["SymbolGraphIndex", "TestSupport"]),
     .executableTarget(
       name: "sdk-api",
       dependencies: [
@@ -40,7 +42,7 @@ let package = Package(
 
     // sdk-search: ranked framework/HIG pattern search over an embedded corpus.
     .target(name: "PatternIndex", resources: [.process("Data")]),
-    .testTarget(name: "PatternIndexTests", dependencies: ["PatternIndex"]),
+    .testTarget(name: "PatternIndexTests", dependencies: ["PatternIndex", "TestSupport"]),
     .executableTarget(
       name: "sdk-search",
       dependencies: [

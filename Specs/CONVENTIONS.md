@@ -152,12 +152,27 @@ __attribute__((constructor)) static void flexscope_boot(void) { /* ... */ }
 
 ### Tests carry the same IDs
 
-Every behavioral test is tagged with the spec IDs it verifies.
+Every behavioral test is associated with the spec ID it verifies and — where one applies — the Gherkin scenario sub-ID it pins, through **traits**, not string prefixes. The traits live in the shared `TestSupport` target (`Tests/Support/SpecTraits.swift`): `.spec(_:)` and `.scenario(_:)`.
 
-- **Swift Testing (primary):** a `@Suite("command.sdk-api.check")` per spec ID and a `@Test("[scenario.sdk-api.check.exists] …")` display-name prefix per scenario. The `[scenario.<id>]` prefix is what drift tooling greps. (`.tags(.spec(…), .scenario(…))` also works if you prefer tag-based filtering.)
-- **XCTest (ObjC, where `RuntimeKit` is exercised from ObjC):** a `// SPEC: <id>` comment on the test class and a `// [scenario.<id>]` comment above each `- (void)test…` method (ObjC selector names can't hold dots or brackets, so the sub-ID lives in the comment drift tooling greps).
+- **Swift Testing (primary):** `@Suite(.spec("<spec-id>"))` on the suite, `@Test(.scenario("<scenario-id>"))` on each test that pins a scenario, and a **raw identifier** for the function name — a backtick-quoted natural-language description, so the function name *is* the readable test name:
 
-The `[scenario.<id>]` prefix is mandatory because Gherkin scenarios in story files have their own sub-IDs (below) and tests must trace to a specific scenario, not just a story.
+    ```swift
+    import TestSupport
+    import Testing
+
+    @testable import AgentCLI
+
+    @Suite(.spec("domain.agent-cli"))
+    struct AgentCLITests {
+        @Test(.scenario("scenario.agent-cli.sorted-keys"))
+        func `object keys are emitted in sorted order`() throws { /* ... */ }
+    }
+    ```
+
+    Drift/coverage tooling greps `.spec("…")` and `.scenario("…")` for the verbatim IDs. A fine-grained sub-spec unit test with no user-facing scenario carries only its suite's `.spec` plus a descriptive raw-identifier name — don't invent a scenario where none exists.
+- **XCTest (ObjC, where `RuntimeKit` is exercised from ObjC):** ObjC selectors can't hold dots, brackets, or spaces, so the IDs live in comments — `// SPEC: <id>` on the test class and `// [scenario.<id>]` above each `- (void)test…` method, which the tooling also greps.
+
+A test traces to a specific scenario, not just a story, whenever a Gherkin scenario pins the behavior.
 
 ## Stories and scenarios
 
@@ -179,7 +194,7 @@ Each scenario has a stable sub-ID derived from its position and intent:
 - Then the tool reports it exists with its minimum OS version
 ```
 
-Sub-IDs follow the pattern `scenario.<tool>.<capability>.<short-name>`. Tests reference them in the `[scenario.id]` prefix.
+Sub-IDs follow the pattern `scenario.<tool>.<capability>.<short-name>`. Tests reference them via the `.scenario(…)` trait (Swift) or a `// [scenario.<id>]` comment (ObjC).
 
 ### The actor is a coding agent (repo-wide)
 
