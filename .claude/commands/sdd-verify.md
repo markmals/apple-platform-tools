@@ -20,8 +20,9 @@ Run all behavioral tests and produce a report keyed by spec ID. The report disti
 
 1. **Run the test suite** via `mise run test` (the whole package), or `swift test` filtered by spec ID where a narrower run is useful.
 2. **Parse the results** by spec ID:
-    - Swift Testing (`AgentCLI` and the tools): `@Suite("<spec-id>")` carries the spec ID; tests carry `[scenario.<id>]` in the display name (`@Test("[scenario.<id>] …")`).
+    - Swift Testing (`AgentCLI` and the tools): `@Suite(.spec("<spec-id>"))` carries the spec ID; tests carry the `.scenario("<id>")` trait (`@Test(.scenario("<id>"))`). Grep `\.spec\("` for suites and `\.scenario\("` for scenario tags.
     - ObjC/XCTest (`RuntimeKit`): the test file carries `// SPEC: <id>`; each test method has a `// [scenario.<id>]` comment above it.
+    - A single scan over both forms: `rg '\.scenario\("|\[scenario\.'`.
 3. **Cross-reference reverse pointers.** `rg "SPEC: " Sources/` and parse out the spec IDs to identify implementations without tests.
 4. **Cross-reference all known specs.** Walk `Specs/` and `Features/<tool>/<NNNN>-<slug>/` for every spec ID that _could_ be implemented.
 5. **Output a table** of spec ID → status with a summary count.

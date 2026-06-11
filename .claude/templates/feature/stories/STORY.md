@@ -51,6 +51,6 @@ depends-on: []
   Add scenarios as needed. If you reach ~6+ scenarios, the story is probably
   too large — split it. See the writing-user-stories skill for guidance.
 
-  Each scenario sub-ID becomes a test name prefix in the tool's Swift Testing suite:
-  @Test("[scenario.<tool>.<capability>.<short-name>] ...")
+  Each scenario sub-ID becomes a `.scenario(…)` trait in the tool's Swift Testing suite:
+  @Test(.scenario("scenario.<tool>.<capability>.<short-name>")) func `...`()
 -->

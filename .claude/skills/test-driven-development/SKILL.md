@@ -50,16 +50,19 @@ If you're thinking "skip TDD just this once" — stop. That's rationalization.
 ### RED — write one failing test
 
 - One behavior per test.
-- Clear name: `[scenario.<id>] <what the user observes>`.
+- Clear name: a raw-identifier function name that reads as `<what the user observes>`, with the `.scenario("<id>")` trait pinning the scenario.
 - Test real code; mock only what you can't control (network, time, randomness).
 - **Example or invariant?** A specific scenario ("creating with valid info shows it in the list") is an example test. A universally-quantified rule from a `domain.<entity>` spec — "name is never blank after trim", "for all valid items, encode/decode round-trips" — is a **property**, and the failing test you write first is a property test. See "Invariants get a property, not just examples" below. Don't settle for examples when the spec said "for all".
 
 ```swift
 // Swift Testing — the default for every tool and shared library
-@Suite("command.sdk-api.check")
+import TestSupport
+import Testing
+
+@Suite(.spec("command.sdk-api.check"))
 struct SdkApiCheckTests {
-    @Test("[scenario.sdk-api.check.missing] reports a missing symbol as not present")
-    func missingSymbol() throws {
+    @Test(.scenario("scenario.sdk-api.check.missing"))
+    func `reports a missing symbol as not present`() throws {
         let result = try SdkApiCheck.run(symbol: "doesNotExist", in: emptyCorpus)
         #expect(result == .absent)
     }
@@ -121,14 +124,14 @@ The trigger is concrete: a `domain.<entity>` spec's **Invariants** section that 
 
 ```swift
 // Swift Testing + parameterized arguments
-@Suite("domain.agent-cli")
+import TestSupport
+import Testing
+
+@Suite(.spec("domain.agent-cli"))
 struct ArgumentValidationTests {
-    // [scenario.agent-cli.name-required] no blank-after-trim name ever validates
-    @Test(
-        "[scenario.agent-cli.name-required] rejects any blank-after-trim name",
-        arguments: [" ", "\t", "\n", "  \t  "]
-    )
-    func rejectsBlankName(blank: String) {
+    // no blank-after-trim name ever validates
+    @Test(.scenario("scenario.agent-cli.name-required"), arguments: [" ", "\t", "\n", "  \t  "])
+    func `rejects any blank-after-trim name`(blank: String) {
         #expect(validate(name: blank) == .invalid)
     }
 }
@@ -162,7 +165,7 @@ Every test in this repo carries the spec ID it verifies. The exact form is in `S
 
 | Test framework               | Where the spec ID lives                     | Where the scenario sub-ID lives                       |
 | ---------------------------- | ------------------------------------------- | ----------------------------------------------------- |
-| Swift Testing (every target) | `@Suite("command.sdk-api.check")`           | `@Test("[scenario.<id>] ...")` display name           |
+| Swift Testing (every target) | `@Suite(.spec("command.sdk-api.check"))`    | `@Test(.scenario("<id>"))` trait (raw-identifier name) |
 | ObjC + XCTest (RuntimeKit)   | `// SPEC: <id>` comment on the test class   | `// [scenario.<id>]` comment above the test method    |
 
 If a test doesn't carry these tags, drift detection can't find it. Don't skip the tags.

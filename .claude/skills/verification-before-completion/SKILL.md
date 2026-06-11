@@ -102,8 +102,8 @@ Even when the result is bad, state it cleanly:
 
 ```
 mise run test reports 2 failures:
-  - command.sdk-api.check / [scenario.sdk-api.check.present] — expected present, got absent
-  - error.flexscope.stale-node / [scenario.flexscope.stale-node.rejected] — no error thrown
+  - command.sdk-api.check / scenario.sdk-api.check.present — expected present, got absent
+  - error.flexscope.stale-node / scenario.flexscope.stale-node.rejected — no error thrown
 Investigating now.
 ```
 

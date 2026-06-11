@@ -96,9 +96,9 @@ Use `subagent_type: "general-purpose"` and `model: "sonnet"`. Provide:
 - The full spec text (don't say "read Specs/foo/bar.md", paste the contents).
 - The full text of every depends-on spec, in the order you want it considered.
 - The tool's existing `// SPEC:` neighbor file(s) as worked examples for its idioms and test setup.
-- The relevant test-tagging rules from `Specs/CONVENTIONS.md` (Swift Testing `@Suite`/`@Test`, or `// SPEC:`/`// [scenario.<id>]` comments for ObjC/XCTest in RuntimeKit).
+- The relevant test-tagging rules from `Specs/CONVENTIONS.md` (Swift Testing `@Suite(.spec(…))`/`@Test(.scenario(…))` traits with raw-identifier names, or `// SPEC:`/`// [scenario.<id>]` comments for ObjC/XCTest in RuntimeKit).
 - Explicit instructions:
-    1. **Write failing tests first**, tagged with the spec ID and the relevant `[scenario.<id>]` prefixes per `Specs/CONVENTIONS.md`.
+    1. **Write failing tests first**, tagged with the spec ID and the relevant scenario IDs per `Specs/CONVENTIONS.md` — the `.spec(…)` / `.scenario(…)` traits in Swift, or the `// SPEC:` / `// [scenario.<id>]` comments in ObjC/XCTest.
     2. Run the tests to **confirm they fail** for the right reason.
     3. Implement the **minimum code** to make the tests pass.
     4. **Attach `// SPEC: <id>`** to the implementing class/function/module.
@@ -132,7 +132,7 @@ Instructions:
 
 1. Confirm the implementation **satisfies every clause of the spec**.
 2. Confirm the **reverse pointer** `// SPEC: <id>` is present on the implementing unit.
-3. Confirm there are tests covering **every Gherkin scenario** in the spec, with the right `[scenario.<id>]` prefixes.
+3. Confirm there are tests covering **every Gherkin scenario** in the spec, carrying the right `.scenario("<id>")` traits (Swift) or `// [scenario.<id>]` comments (ObjC/XCTest).
 4. Confirm there is **nothing extra** that the spec didn't require (no scope creep).
 5. Output: ✅ Approved, OR ❌ list of specific gaps and overreach.
 

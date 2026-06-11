@@ -27,7 +27,7 @@ If unclear, default to all tools.
     - `rg "SPEC:[[:space:]]*[a-zA-Z0-9._-]+" Sources/` to enumerate referenced IDs
     - Cross-check that each ID has a spec file under `Specs/` or `Features/<tool>/<n>/`
     - Cross-check that the spec hasn't been edited since the impl file (`git log --diff-filter=M -- Specs/... Features/.../...`)
-3. **Test signal**: run the behavioral suite (`mise run test`, or `swift test` filtered by spec ID). Map test failures back to spec IDs via the `[scenario.<id>]` test-name convention (Swift Testing `@Test("[scenario.<id>] …")`; ObjC/XCTest in RuntimeKit uses `// [scenario.<id>]` comments, which the drift tooling greps by that prefix).
+3. **Test signal**: run the behavioral suite (`mise run test`, or `swift test` filtered by spec ID). Map test failures back to spec IDs via the scenario-tag convention (Swift Testing `@Test(.scenario("<id>"))` under a `@Suite(.spec("<id>"))`; ObjC/XCTest in RuntimeKit uses `// [scenario.<id>]` comments). A scenario-tagged test is detected by grepping both forms — `rg '\.scenario\("|\[scenario\.'` — and the suite tag by `rg '\.spec\("'`.
 4. **Build the table**: for every (spec_id, tool) pair, record `{has_pointer, spec_newer_than_impl, tests_passing}`.
 
 ## Output

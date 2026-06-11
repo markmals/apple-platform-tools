@@ -21,7 +21,7 @@ For a given spec ID, show:
 1. **Read the spec.** Confirm the ID exists and read its content (so the report header includes the spec's intent in one line).
 2. **Locate the implementation and tests:**
    a. `rg "SPEC: <spec-id>" Sources/` — record matching files.
-   b. `rg "scenario.<spec-id>" Sources/` (Swift Testing display names) or the `// [scenario.<id>]` comments (ObjC/XCTest in `RuntimeKit`) — record test files and scenario sub-IDs.
+   b. `rg '\.scenario\("scenario.<spec-id>' Tests/` (Swift Testing `.scenario(…)` traits, under a `@Suite(.spec("<spec-id>"))`) or the `// [scenario.<id>]` comments (ObjC/XCTest in `RuntimeKit`) — record test files and scenario sub-IDs. To catch both forms at once: `rg '\.scenario\("scenario.<spec-id>|\[scenario\.<spec-id>' Tests/`.
    c. Optionally run the tests filtered to this spec ID (`swift test`, filtered) and record pass/fail.
 3. **Emit a table** of impl file × {scenarios covered, status, deviation note}.
 

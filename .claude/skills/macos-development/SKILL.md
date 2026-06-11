@@ -100,17 +100,18 @@ Build the injectable dylib **arm64e** (a plain-arm64 dylib fails dyld with "miss
 ## Tests at the pure-core layer, oracle for the rest
 
 ```swift
+import TestSupport
 import Testing
 @testable import AgentCLI
 
-@Suite("domain.agent-cli")
+@Suite(.spec("domain.agent-cli"))
 struct OutputTests {
-    @Test("[scenario.agent-cli.sorted-keys] object keys are emitted in sorted order")
-    func sortedKeys() throws { /* ... */ }
+    @Test(.scenario("scenario.agent-cli.sorted-keys"))
+    func `object keys are emitted in sorted order`() throws { /* ... */ }
 }
 ```
 
-- `@Suite` name = the spec ID; `@Test` display name starts with `[scenario.<id>]` — drift tooling greps that prefix.
+- The `.spec("<id>")` trait carries the spec ID; the `.scenario("<id>")` trait pins the Gherkin scenario; the function name is a raw identifier — its natural-language text *is* the test name. Both traits live in the shared `TestSupport` target. Drift tooling greps `.spec("…")` / `.scenario("…")` (Swift), and the `// SPEC:` / `// [scenario.<id>]` comment form for RuntimeKit's ObjC/XCTest.
 - Pure-core suites need no privileges and run on any Mac.
 - Tool-appropriate oracles for the effectful layer: checked-in symbol-graph fixtures (`sdk-api`), an embedded corpus (`sdk-search`), a known framework (`headerdump`), the `SampleAppKit` known-geometry app under `DYLD_INSERT_LIBRARIES` (`flexscope`). Every injection integration test asserts the **target is still alive** after the op, with a watchdog for main-thread deadlock.
 
