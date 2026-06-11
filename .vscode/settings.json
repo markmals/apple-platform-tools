@@ -1,0 +1,66 @@
+{
+    "editor.defaultFormatter": "swiftlang.swift-vscode",
+    "editor.formatOnSave": true,
+    "editor.formatOnSaveMode": "file",
+    "editor.codeActionsOnSave": {
+        "source.addMissingImports.ts": "explicit",
+        "source.removeUnused.ts": "never"
+    },
+
+    "oxc.enable.oxfmt": true,
+
+    "[swift]": {
+        "editor.defaultFormatter": "swiftlang.swift-vscode"
+    },
+    "[typescript]": {
+        "editor.defaultFormatter": "oxc.oxc-vscode"
+    },
+    "[typescriptreact]": {
+        "editor.defaultFormatter": "oxc.oxc-vscode"
+    },
+    "[javascript]": {
+        "editor.defaultFormatter": "oxc.oxc-vscode"
+    },
+    "[javascriptreact]": {
+        "editor.defaultFormatter": "oxc.oxc-vscode"
+    },
+    "[css]": {
+        "editor.defaultFormatter": "oxc.oxc-vscode"
+    },
+    "[json]": {
+        "editor.defaultFormatter": "oxc.oxc-vscode"
+    },
+    "[jsonc]": {
+        "editor.defaultFormatter": "oxc.oxc-vscode"
+    },
+    "[toml]": {
+        "editor.defaultFormatter": "oxc.oxc-vscode"
+    },
+    "[markdown]": {
+        "editor.defaultFormatter": "oxc.oxc-vscode"
+    },
+
+    "explorer.fileNesting.enabled": true,
+    "explorer.fileNesting.expand": false,
+    "explorer.fileNesting.patterns": {
+        "Project.swift": ".swift-format",
+        "Package.swift": ".swift-format, Package.resolved",
+        "readme*": "agent*, authors, backers*, changelog*, citation*, claude*, code_of_conduct*, codeowners, contributing*, contributors, copying, credits, governance.md, history.md, license*, maintainers, readme*, security.md, sponsors*"
+    },
+    "files.exclude": {
+        "**/.build": true,
+        "**/.swiftpm": true,
+        "**/Derived": true,
+        "**/*.xcodeproj": true,
+        "**/*.xcworkspace": true
+    },
+
+    "oxc.enable.oxlint": false,
+    "prettier.enable": false,
+    "eslint.enable": false,
+    "dprint.experimentalLsp": false,
+    "deno.enable": false,
+    "unocss.disable": true,
+    "vitest.ignoreWorkspace": true,
+    "vitest.disableWorkspaceWarning": true
+}

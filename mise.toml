@@ -1,0 +1,24 @@
+experimental_monorepo_root = true
+
+[settings]
+experimental = true
+
+[tools]
+# Swift + swift-format come from the active Xcode / command-line-tools toolchain.
+# `brew install swift-format` if `swift format` isn't on your toolchain.
+
+[tasks.fmt]
+description = "Format Swift sources; pass file paths, or omit to format the tree"
+run = "swift format --in-place --recursive {{arg(name='paths', var=true, default='Sources Tests')}}"
+
+[tasks.lint]
+description = "Lint Swift sources (swift-format, strict)"
+run = "swift format lint --strict --recursive Sources Tests"
+
+[tasks.build]
+description = "Build the CLI, boot dylib, and FLEX-mac (debug)"
+run = "swift build"
+
+[tasks.test]
+description = "Run the Swift Testing suite"
+run = "swift test"
