@@ -77,17 +77,17 @@ family. The pure interpretation logic is unit-tested against checked-in fixtures
 | `HeaderDumpCLITests` | test | Story-level verification of the framework dump behavior. | `HeaderDumpCore`, `TestSupport`, `HeaderDumpRuntimeObjC`, `MachOKit` | `story.headerdump.dump-framework` |
 | `RedumpCoreTests` | test | Per-command unit verification of every `redump` verb. | `RedumpCore`, `TestSupport`, `MachOKit` | `command.redump.*` |
 
-### Live runtime introspection — `uitool` *(in progress)*
+### Live runtime introspection — `uitool` *(core complete; CLI/injection planned)*
 
 Inspects a **running** AppKit/UIKit app — the view hierarchy, fonts, constraints,
 the ObjC object graph — by injection on a defanged dev machine. `RuntimeKit` (the
-read side) is complete; `UIToolCore` (the pure projection core) is under active
-development; the injected effectful half is planned.
+read side) and `UIToolCore` (the pure projection core) are complete; the injected
+effectful half (`UIToolServer` / `UIToolBoot`) and the `uitool` CLI are planned.
 
 | Target | Kind | Purpose | Key dependencies | Realizes |
 | --- | --- | --- | --- | --- |
 | `RuntimeKit` | library **(product)** | Swift reimplementation of FLEX's headless reflection core + AppKit walker: the type-encoding parser, ObjC-runtime reflection metadata (mirror / property / ivar / method / protocol), and the `NSApp` → `NSView` / `CALayer` walker emitting immutable `Sendable` snapshots. | — | `domain.runtime.type-encoding` · `.reflection` · `.walker` |
-| `UIToolCore` | library (internal, **in progress**) | The pure projection core for `uitool`: node model, node-id grammar, Swift-native `Regex` selector + predicate language, and tree/find/windows/node projection over `RuntimeKit` snapshots into the JSON-Lines / exit-code contract. | `AgentCLI`, `RuntimeKit` | `domain.uitool.node` · `.node-id` · `.selector` · `.ipc` · `command.uitool.tree` · `.find` · `.windows` · `.node` |
+| `UIToolCore` | library (internal) | The pure projection core for `uitool`: node model, node-id grammar, Swift-native `Regex` selector + predicate language, and tree/find/windows/node projection over `RuntimeKit` snapshots into the JSON-Lines / exit-code contract. Pure and hermetically tested; the CLI that wraps it is planned. | `AgentCLI`, `RuntimeKit` | `domain.uitool.node` · `.node-id` · `.selector` · `.ipc` · `command.uitool.tree` · `.find` · `.windows` · `.node` |
 | `RuntimeKitTests` | test | Type-encoding parser, reflection metadata, pointer/tagged-pointer safety, AppKit walker snapshots. | `RuntimeKit`, `TestSupport` | `domain.runtime.*` |
 | `UIToolCoreTests` | test | The node/node-id foundation and the selector + predicate grammar against the `uitool` specs (hermetic — synthetic snapshot values, no GUI). | `UIToolCore`, `RuntimeKit`, `TestSupport` | `domain.uitool.*` · `command.uitool.*` |
 
