@@ -26,6 +26,24 @@ public struct ConstraintNode: Sendable, Codable {
   /// The constraints touching the view, both directions, deduplicated.
   public let constraints: [ConstraintDescription]
 
+  public init(
+    translatesAutoresizingMaskIntoConstraints: Bool,
+    intrinsicContentSize: IntrinsicSize,
+    contentHuggingHorizontal: Double,
+    contentHuggingVertical: Double,
+    compressionResistanceHorizontal: Double,
+    compressionResistanceVertical: Double,
+    constraints: [ConstraintDescription]
+  ) {
+    self.translatesAutoresizingMaskIntoConstraints = translatesAutoresizingMaskIntoConstraints
+    self.intrinsicContentSize = intrinsicContentSize
+    self.contentHuggingHorizontal = contentHuggingHorizontal
+    self.contentHuggingVertical = contentHuggingVertical
+    self.compressionResistanceHorizontal = compressionResistanceHorizontal
+    self.compressionResistanceVertical = compressionResistanceVertical
+    self.constraints = constraints
+  }
+
   /// Snapshot the Auto Layout facts of a live view. Reads `view.constraints` and
   /// every ancestor's constraints on the main thread, keeping only the ones that
   /// touch `view` (it is the first or second item), deduplicated by identity.
@@ -78,6 +96,11 @@ public struct ConstraintNode: Sendable, Codable {
 public struct IntrinsicSize: Sendable, Codable {
   public let width: Double
   public let height: Double
+
+  public init(width: Double, height: Double) {
+    self.width = width
+    self.height = height
+  }
 }
 
 // SPEC: domain.runtime.walker
@@ -102,6 +125,26 @@ public struct ConstraintDescription: Sendable, Codable {
   public let isActive: Bool
   /// `NSLayoutConstraint.identifier`, when one was set.
   public let identifier: String?
+
+  public init(
+    first: ConstraintItem,
+    relation: String,
+    second: ConstraintItem,
+    multiplier: Double,
+    constant: Double,
+    priority: Double,
+    isActive: Bool,
+    identifier: String?
+  ) {
+    self.first = first
+    self.relation = relation
+    self.second = second
+    self.multiplier = multiplier
+    self.constant = constant
+    self.priority = priority
+    self.isActive = isActive
+    self.identifier = identifier
+  }
 
   /// Decompose a constraint. `target` is the view the owning `ConstraintNode`
   /// describes, used to mark which side `is` the target.
@@ -145,6 +188,13 @@ public struct ConstraintItem: Sendable, Codable {
   public let kind: String
   /// True when this item **is** the view the owning `ConstraintNode` describes.
   public let isTarget: Bool
+
+  public init(className: String?, attribute: String, kind: String, isTarget: Bool) {
+    self.className = className
+    self.attribute = attribute
+    self.kind = kind
+    self.isTarget = isTarget
+  }
 
   /// Build one side from a (possibly nil) constraint item. `NSView` is checked
   /// before `NSLayoutGuide`, faithful to FLEX.
