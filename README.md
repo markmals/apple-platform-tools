@@ -19,8 +19,11 @@ posture, [`Specs/CONVENTIONS.md`](Specs/CONVENTIONS.md) for the spec contract, a
 
 The seven things the package vends — five CLIs and two libraries. Four of the CLIs
 are built and installed by [`scripts/install-tools.sh`](scripts/install-tools.sh);
-`uitool` is **deliberately excluded** — the runtime cluster is dev-box-only and
-never distributed (see the dual-use posture):
+`uitool` is **deliberately excluded** — an injection tool is never distributed (the
+dual-use containment posture). Note that excluded-from-the-installer is *not* the
+same as needs-a-defanged-machine: `uitool` inspects your **own** dev-signed apps on
+a stock, SIP-enabled Mac (the cooperative posture); only apps you didn't sign need
+the defanged box (the unrestricted posture).
 
 | Product | Kind | What it does |
 | --- | --- | --- |
@@ -28,7 +31,7 @@ never distributed (see the dual-use posture):
 | `sdk-search` | executable | "How do I do X?" — ranked HIG / framework pattern search over an embedded corpus. |
 | `headerdump` | executable | Private-framework header extraction from Mach-O / the dyld shared cache. |
 | `redump` | executable | Reverse-engineering Mach-O inspection (info, segments, symbols, imports/exports, strings). |
-| `uitool` | executable *(dev-box-only)* | Inspect a running app's view tree / object graph as JSON. `doctor` / `list-apps` and offline `--snapshot` reads work today; live attach is gated on the injection half. |
+| `uitool` | executable *(not installed)* | Inspect a running app's view tree / object graph as JSON. `doctor` / `list-apps` and offline `--snapshot` reads work today; live attach is gated on the injection half. Runs on a stock SIP-on Mac for your own dev-signed apps. |
 | `AgentCLI` | library | The machine contract every tool obeys (deterministic JSON, exit codes, output discipline). |
 | `RuntimeKit` | library | A Swift reimplementation of FLEX's headless ObjC-runtime reflection core + AppKit walker. |
 
@@ -83,16 +86,19 @@ family. The pure interpretation logic is unit-tested against checked-in fixtures
 ### Live runtime introspection — `uitool` *(CLI live; injection planned)*
 
 Inspects a **running** AppKit/UIKit app — the view hierarchy, fonts, constraints,
-the ObjC object graph — by injection on a defanged dev machine. `RuntimeKit` (the
-read side), `UIToolCore` (the pure projection core), and the `uitool` CLI are
-complete; the injected effectful half (`UIToolServer` / `UIToolBoot`) is planned, so
-live attach is gated while `doctor` / `list-apps` / offline `--snapshot` reads work.
+the ObjC object graph — by injection. Injection gates per target: your **own**
+dev-signed (`get-task-allow`) apps inspect on a stock SIP-enabled Mac (the
+cooperative posture); only apps you didn't sign need the defanged box (the
+unrestricted posture) — `doctor` reports both. `RuntimeKit` (the read side),
+`UIToolCore` (the pure projection core), and the `uitool` CLI are complete; the
+injected effectful half (`UIToolServer` / `UIToolBoot`) is planned, so live attach
+is gated while `doctor` / `list-apps` / offline `--snapshot` reads work.
 
 | Target | Kind | Purpose | Key dependencies | Realizes |
 | --- | --- | --- | --- | --- |
 | `RuntimeKit` | library **(product)** | Swift reimplementation of FLEX's headless reflection core + AppKit walker: the type-encoding parser, ObjC-runtime reflection metadata (mirror / property / ivar / method / protocol), and the `NSApp` → `NSView` / `CALayer` walker emitting immutable `Sendable` snapshots. | — | `domain.runtime.type-encoding` · `.reflection` · `.walker` |
 | `UIToolCore` | library (internal) | The pure projection core for `uitool`: node model, node-id grammar, Swift-native `Regex` selector + predicate language, tree/find/windows/node projection, the doctor report, and the Capture / IPC-envelope types. Pure and hermetically tested. | `AgentCLI`, `RuntimeKit` | `domain.uitool.node` · `.node-id` · `.selector` · `.ipc` · `command.uitool.*` |
-| `uitool` | executable **(product, dev-box-only)** | The agent-first CLI: `doctor` / `list-apps` (real local reads) + `windows` / `tree` / `find` / `node` over a `SnapshotSource` (offline `--snapshot` now, the injected server later); `attach` / `detach` + live reads are gated (`NOT_ATTACHED`). Excluded from `install-tools.sh`. | `AgentCLI`, `UIToolCore`, `RuntimeKit`, `ArgumentParser`, `Subprocess` | `command.uitool.doctor` · `.list-apps` · `.windows` · `.tree` · `.find` · `.node` · `.attach` · `.detach` |
+| `uitool` | executable **(product, not installed)** | The agent-first CLI: `doctor` / `list-apps` (real local reads) + `windows` / `tree` / `find` / `node` over a `SnapshotSource` (offline `--snapshot` now, the injected server later); `attach` / `detach` + live reads are gated (`NOT_ATTACHED`). Inspects your own dev-signed apps on a stock SIP-on Mac; excluded from `install-tools.sh` (injection-tool containment). | `AgentCLI`, `UIToolCore`, `RuntimeKit`, `ArgumentParser`, `Subprocess` | `command.uitool.doctor` · `.list-apps` · `.windows` · `.tree` · `.find` · `.node` · `.attach` · `.detach` |
 | `RuntimeKitTests` | test | Type-encoding parser, reflection metadata, pointer/tagged-pointer safety, AppKit walker snapshots. | `RuntimeKit`, `TestSupport` | `domain.runtime.*` |
 | `UIToolCoreTests` | test | The node/node-id foundation, selector + predicate grammar, and the doctor report against the `uitool` specs (hermetic — synthetic snapshot values, no GUI). | `UIToolCore`, `RuntimeKit`, `TestSupport` | `domain.uitool.*` · `command.uitool.*` |
 | `UIToolCLITests` | test | The CLI shell — `Capture` / `SnapshotSource` round-trips, the read verbs over a captured fixture, doctor parsing, and the gated `NOT_ATTACHED` paths. | `uitool`, `UIToolCore`, `RuntimeKit`, `TestSupport` | `command.uitool.*` |
