@@ -14,6 +14,7 @@ let package = Package(
     .executable(name: "headerdump", targets: ["headerdump"]),
     .executable(name: "redump", targets: ["redump"]),
     .library(name: "RuntimeKit", targets: ["RuntimeKit"]),
+    .executable(name: "uitool", targets: ["uitool"]),
   ],
   dependencies: [
     .package(url: "https://github.com/apple/swift-argument-parser", from: "1.5.0"),
@@ -138,6 +139,25 @@ let package = Package(
     .testTarget(
       name: "UIToolCoreTests",
       dependencies: ["UIToolCore", "RuntimeKit", "TestSupport"]
+    ),
+
+    // uitool: the agent-first CLI over UIToolCore. doctor / list-apps are real
+    // local system reads; the read verbs (windows/tree/find/node) run over a
+    // SnapshotSource — a captured [WindowSnapshot] now, the injected UIToolServer
+    // later. attach/detach + the live session source are the deferred injection half.
+    .executableTarget(
+      name: "uitool",
+      dependencies: [
+        "AgentCLI",
+        "UIToolCore",
+        "RuntimeKit",
+        .product(name: "ArgumentParser", package: "swift-argument-parser"),
+        .product(name: "Subprocess", package: "swift-subprocess"),
+      ]
+    ),
+    .testTarget(
+      name: "UIToolCLITests",
+      dependencies: ["uitool", "UIToolCore", "RuntimeKit", "TestSupport"]
     ),
   ]
 )
