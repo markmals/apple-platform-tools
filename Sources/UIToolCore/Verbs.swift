@@ -119,13 +119,13 @@ public enum Verbs {
   /// `STALE_NODE`, never a silent empty read. Reads exactly one node — never its
   /// subtree. Requested-but-inapplicable facets project as `null`, not omitted, so
   /// the agent distinguishes "asked, absent" from "not asked".
-  public static func node(at id: NodeID, in tree: NodeTree, include: IncludeFacets = []) throws
-    -> String
-  {
+  public static func node(
+    at id: NodeID, in tree: NodeTree, include: IncludeFacets = [], sessionId: String? = nil
+  ) throws -> String {
     let resolved = try tree.resolve(id)
     let node = Node.projecting(
       resolved.snapshot, id: resolved.id, parent: resolved.parent, include: include, depth: 0)
-    return try Projection.nodeJSON(node, include: include)
+    return try Projection.nodeJSON(node, include: include, sessionId: sessionId)
   }
 
   // MARK: - shared

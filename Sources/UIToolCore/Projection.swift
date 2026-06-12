@@ -62,11 +62,18 @@ public enum Projection {
   /// `--include layer` would otherwise vanish; this re-stamps each requested facet's
   /// key to `null` when it is absent. (`--include frame`/`class` carry no nullable
   /// field of their own — `frame` is already default, `class` adds `superclasses`.)
-  public static func nodeJSON(_ node: Node, include: IncludeFacets) throws -> String {
+  /// `sessionId` (when given) is stamped as a top-level key — the `node` verb is a
+  /// scalar payload, so the IPC envelope's `sessionId` rides on the object itself
+  /// (there is no trailing `_meta` line for a single-node read). `--no-meta` passes
+  /// `nil` here for byte-stable output across sessions.
+  public static func nodeJSON(_ node: Node, include: IncludeFacets, sessionId: String? = nil)
+    throws -> String
+  {
     var object = try encodeToObject(node)
     for (facet, field) in facetFields where include.contains(facet) {
       if object[field] == nil { object[field] = .null }
     }
+    if let sessionId { object["sessionId"] = .string(sessionId) }
     return try Output.json(ProjectedRecord(object))
   }
 

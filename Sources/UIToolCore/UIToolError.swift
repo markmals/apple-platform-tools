@@ -1,3 +1,5 @@
+import AgentCLI
+
 // SPEC: domain.uitool.ipc
 /// The closed `uitool` error vocabulary, paired with the CLI exit code each maps
 /// to. The pure core throws these; the (deferred) injected server and the CLI
@@ -26,6 +28,9 @@ public enum UIToolError: Error, Equatable {
   case noWindows
   /// A main-thread hop exceeded the bound, or a socket timed out.
   case timeout
+  /// An injection precondition is unmet — `doctor`'s not-ready verdict (and the
+  /// future `attach` gate). The detail names the failed checks.
+  case preconditionFailed(String)
 
   /// The wire `error.code` string — the closed vocabulary the agent branches on
   /// without parsing prose.
@@ -38,6 +43,7 @@ public enum UIToolError: Error, Equatable {
     case .notAttached: return "NOT_ATTACHED"
     case .noWindows: return "NO_WINDOWS"
     case .timeout: return "TIMEOUT"
+    case .preconditionFailed: return "PRECONDITION_FAILED"
     }
   }
 
@@ -48,8 +54,27 @@ public enum UIToolError: Error, Equatable {
     case .badSelector, .unknownField, .badPredicate: return 2
     case .notAttached: return 4
     case .staleNode: return 5
+    case .preconditionFailed: return 6
     case .timeout: return 7
     case .noWindows: return 0
+    }
+  }
+}
+
+// SPEC: domain.uitool.ipc
+extension UIToolError: AgentError {
+  /// The stderr diagnostic: the closed wire `code` plus the offending detail, so a
+  /// reader sees both the branchable code and what triggered it.
+  public var message: String {
+    switch self {
+    case .badSelector(let detail): return "\(code): \(detail)"
+    case .unknownField(let path): return "\(code): \(path)"
+    case .badPredicate(let detail): return "\(code): \(detail)"
+    case .staleNode(let id): return "\(code): \(id)"
+    case .notAttached: return "\(code): no attached uitool session for the target"
+    case .noWindows: return "\(code): the attached app has no top-level windows"
+    case .timeout: return "\(code): the main-thread read or socket timed out"
+    case .preconditionFailed(let detail): return "\(code): \(detail)"
     }
   }
 }

@@ -38,4 +38,24 @@ public struct WindowRecord: Sendable, Codable {
     self.key = window.isKey
     self.main = window.isMain
   }
+
+  private enum CodingKeys: String, CodingKey {
+    case node, parent, `class`, title, frame, key, main
+  }
+
+  /// Emit all seven fields **always present** — the windows spec pins the record to
+  /// exactly `{node, parent, class, frame, title, key, main}`, so a nil `parent`
+  /// (always, for a root) or a nil `title` (an untitled window) encodes as explicit
+  /// `null` rather than being dropped the way Swift's synthesized encoder would. The
+  /// decode stays synthesized (a null or an absent key both read back as nil).
+  public func encode(to encoder: Encoder) throws {
+    var container = encoder.container(keyedBy: CodingKeys.self)
+    try container.encode(node, forKey: .node)
+    try container.encode(parent, forKey: .parent)
+    try container.encode(`class`, forKey: .class)
+    try container.encode(title, forKey: .title)
+    try container.encode(frame, forKey: .frame)
+    try container.encode(key, forKey: .key)
+    try container.encode(main, forKey: .main)
+  }
 }
