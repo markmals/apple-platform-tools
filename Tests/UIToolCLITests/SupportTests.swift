@@ -23,35 +23,56 @@ import UIToolCore
 @Suite(.spec("command.uitool.doctor"))
 struct DoctorEdgeTests {
   @Test(.scenario("scenario.uitool.doctor-preconditions.all-pass"))
-  func `a defanged machine's captured outputs report ready`() {
+  func `a fully defanged machine's captured outputs make both postures usable`() {
     let report = UIToolCore.Doctor.report(
       csrutil: "System Integrity Protection status: disabled.",
       nvramBootArgs: "amfi_get_out_of_my_way=0x1 -arm64e_preview_abi",
       arch: "arm64e",
       osBuild: "26D5044f",
       libraryValidation: true,
-      uitoolBuilt: true)
-    #expect(report.ready)
+      injectableArm64: true,
+      injectableArm64e: true)
+    #expect(report.cooperative.usable)
+    #expect(report.unrestricted.usable)
+  }
+
+  @Test
+  func `a stock SIP-on machine with the arm64 injectable is cooperative-usable, not unrestricted`()
+  {
+    // The exit code the CLI maps follows the cooperative posture, which on a stock
+    // SIP-enabled Mac is usable the moment the arm64 boot dylib exists — no defang.
+    let report = UIToolCore.Doctor.report(
+      csrutil: "System Integrity Protection status: enabled.",
+      nvramBootArgs: "",
+      arch: "arm64",
+      osBuild: "26D5044f",
+      libraryValidation: false,
+      injectableArm64: true,
+      injectableArm64e: false)
+    #expect(report.cooperative.usable)
+    #expect(!report.unrestricted.usable)
   }
 
   @Test(.scenario("scenario.uitool.doctor-preconditions.one-fail"))
-  func `SIP enabled makes the report not-ready with the sip check failed`() {
+  func `SIP enabled makes the unrestricted posture unusable with the sip check failed`() {
     let report = UIToolCore.Doctor.report(
       csrutil: "System Integrity Protection status: enabled.",
       nvramBootArgs: "amfi_get_out_of_my_way=0x1 -arm64e_preview_abi",
       arch: "arm64e",
       osBuild: "26D5044f",
       libraryValidation: true,
-      uitoolBuilt: true)
-    #expect(!report.ready)
-    #expect(report.checks.first { $0.name == "sip" }?.status == .failed)
+      injectableArm64: true,
+      injectableArm64e: true)
+    #expect(!report.unrestricted.usable)
+    #expect(report.unrestricted.requires.first { $0.name == "sip" }?.status == .failed)
   }
 
   @Test
-  func `the injectable-presence probe is honestly absent until the injection half lands`() {
-    // The injection half is not built, so the on-disk probe reports false (present-
+  func `both injectable probes are honestly absent until the injection half lands`() {
+    // The injection half is not built, so both on-disk probes report false (present-
     // and-readable but absent), never nil — the disk read itself never fails.
-    #expect(Doctor.Probe.injectablePresent() == false)
+    #expect(Doctor.Probe.injectableArm64Present() == false)
+    #expect(Doctor.Probe.injectableArm64ePresent() == false)
   }
 }
 

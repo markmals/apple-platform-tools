@@ -3,16 +3,18 @@ import Foundation
 // SPEC: command.uitool.doctor
 /// One precondition's verdict. `name` is the frozen check id from
 /// [[command.uitool.doctor]] (`sip` / `amfi` / `libval` / `arm64e-abi` / `arch` /
-/// `uitool-built`); `detail` is the spec's byte-stable token, never free prose;
-/// `remedy` is the one-line fix, present only on a failed check.
+/// `injectable-arm64` / `injectable-arm64e`); `detail` is the spec's byte-stable
+/// token, never free prose; `remedy` is the one-line fix, present only on a failed
+/// check.
 ///
 /// `status` carries one extra state the spec's `pass: Bool` cannot: `unknown`,
 /// for a check whose underlying command could not be read (the spawn failed). A
 /// spawn failure must never crash `doctor` and must not masquerade as a pass — it
-/// is an honest "couldn't tell", and an `unknown` check leaves the machine
-/// not-ready just like a failure does.
+/// is an honest "couldn't tell", and an `unknown` check leaves a posture not-usable
+/// just like a failure does.
 public struct PreconditionCheck: Codable, Equatable, Sendable {
-  /// The frozen check id (`sip`, `amfi`, `libval`, `arm64e-abi`, `arch`, `uitool-built`).
+  /// The frozen check id (`sip`, `amfi`, `libval`, `arm64e-abi`, `arch`,
+  /// `injectable-arm64`, `injectable-arm64e`).
   public let name: String
   /// `ok` (pass), `failed` (read and unmet), or `unknown` (its input could not be read).
   public let status: Status
@@ -36,38 +38,84 @@ public struct PreconditionCheck: Codable, Equatable, Sendable {
 }
 
 // SPEC: command.uitool.doctor
-/// The aggregate verdict: the per-check array in the spec's fixed order, plus the
-/// single `ready` flag the CLI maps to its exit code (0 when ready, 6 otherwise).
-/// `ready` is true only when *every* check passed — a single `failed` or
-/// `unknown` check leaves the machine not-ready.
+/// One injection posture's readiness. macOS gates injection per target, and which
+/// gate applies depends on who controls the target's code signing — so the report
+/// carries *two* postures, and an agent reads which targets it can attach to from
+/// here.
+///
+/// - `usable` is true only when *every* `requires` check is `.ok`; a single
+///   `failed` or `unknown` check leaves the posture not-usable.
+/// - `requires` is this posture's check array in fixed order.
+/// - `note` is the one-line description of what this posture is for.
+public struct ModeReport: Codable, Equatable, Sendable {
+  /// True only when every check in `requires` is `.ok`.
+  public let usable: Bool
+  /// This posture's precondition checks, in fixed order.
+  public let requires: [PreconditionCheck]
+  /// One line: what this posture is for.
+  public let note: String
+
+  public init(requires: [PreconditionCheck], note: String) {
+    self.usable = requires.allSatisfy { $0.status == .ok }
+    self.requires = requires
+    self.note = note
+  }
+}
+
+// SPEC: command.uitool.doctor
+/// The aggregate verdict across both injection postures.
+///
+/// macOS gates injection *per target*, and the gate that applies depends on who
+/// controls the target's code signing — so readiness is not a single flag. The
+/// `cooperative` posture inspects apps the user builds and signs for development
+/// (a `get-task-allow` debug build); it is honored for task-port access and dyld
+/// insertion regardless of SIP, exactly how lldb / Xcode / Reveal attach to your
+/// own apps on a stock Mac — so it needs *no* machine defanging, only the arm64
+/// boot dylib. The `unrestricted` posture inspects apps the user did *not* sign
+/// (system / notarized), which ship hardened with library validation and no
+/// per-app lever — so the only path is to lower protections machine-wide (the full
+/// defang stack) and match the system frameworks' arm64e slice.
+///
+/// The CLI maps `cooperative.usable` to its exit code: 0 when the common case (your
+/// own apps) is usable, otherwise 6. The defanged machine is required *only* for
+/// non-cooperative targets.
 public struct DoctorReport: Codable, Equatable, Sendable {
-  public let checks: [PreconditionCheck]
-  public let ready: Bool
+  /// Inspect your own `get-task-allow` apps; SIP may stay on.
+  public let cooperative: ModeReport
+  /// Inspect any app including system; needs the full defang.
+  public let unrestricted: ModeReport
   /// The OS build (e.g. `26D5044f`) — precondition validity is OS-build-specific
   /// (arm64e injection regresses across Tahoe 26.x). Machine-specific, so it is
   /// normalized out of snapshot assertions like a session id; `nil` when `sw_vers`
-  /// could not be read. Not itself a check — it never affects `ready`.
+  /// could not be read. Not itself a check — it never affects usability.
   public let osBuild: String?
 
-  public init(checks: [PreconditionCheck], osBuild: String? = nil) {
-    self.checks = checks
-    self.ready = checks.allSatisfy { $0.status == .ok }
+  public init(cooperative: ModeReport, unrestricted: ModeReport, osBuild: String? = nil) {
+    self.cooperative = cooperative
+    self.unrestricted = unrestricted
     self.osBuild = osBuild
   }
 }
 
 // SPEC: command.uitool.doctor
 /// The pure, total interpreter that turns already-captured command outputs into a
-/// `DoctorReport`. It never spawns anything and never fails — the CLI edge runs
-/// `csrutil status`, `nvram boot-args`, `uname -m`, `sw_vers`, and the
-/// framework-presence stat, then hands the *results* here. A `nil` input means
-/// that read could not be made (the spawn failed): the dependent check(s) become
-/// `unknown` rather than crashing or silently passing.
+/// two-posture `DoctorReport`. It never spawns anything and never fails — the CLI
+/// edge runs `csrutil status`, `nvram boot-args`, `uname -m`, `sw_vers`, the
+/// library-validation plist read, and the two injectable-presence stats, then hands
+/// the *results* here. A `nil` input means that read could not be made (the spawn
+/// failed): the dependent check(s) become `unknown` rather than crashing or
+/// silently passing.
 ///
-/// (deviates: the spec's command JSON is `{ok, osBuild, checks:[{check, pass,
-/// detail, remedy}]}`; this build models the verdict as `{checks:[{name, status,
-/// detail, remedy}], ready}` so a spawn failure has an honest `unknown` state the
-/// boolean `pass` cannot express. The check ids, their fixed order, the frozen
+/// The per-check interpreters (sip / amfi / libval / arm64e-abi / arch) and their
+/// frozen `detail` tokens and one-line remedies are unchanged — what this build
+/// adds is the *grouping* into two injection postures and the two arm64 vs arm64e
+/// injectable checks.
+///
+/// (deviates: the spec's command JSON models a single `checks` array with a single
+/// `ok`; this build groups the checks into `{cooperative, unrestricted}` ModeReports
+/// because macOS gates injection per target and the cooperative path needs no
+/// machine defanging — collapsing both postures into one `ready` flag would
+/// over-claim that every target needs SIP off. The per-check ids, the frozen
 /// `detail` tokens, the one-line remedies, and the top-level `osBuild` are kept
 /// verbatim from the spec.)
 public enum Doctor {
@@ -80,24 +128,50 @@ public enum Doctor {
   ///   - arch: stdout of `uname -m` (the running arch).
   ///   - osBuild: stdout of `sw_vers` (carried by the CLI; not itself a check).
   ///   - libraryValidation: whether library validation is disabled, or `nil` if unread.
-  ///   - uitoolBuilt: whether the arm64e injectable is present, or `nil` if unread.
+  ///   - injectableArm64: whether the arm64 `UIToolBoot` injectable is present, or `nil` if unread.
+  ///   - injectableArm64e: whether the arm64e `UIToolBoot` injectable is present, or `nil` if unread.
   public static func report(
     csrutil: String?,
     nvramBootArgs: String?,
     arch: String?,
     osBuild: String?,
     libraryValidation: Bool?,
-    uitoolBuilt: Bool?
+    injectableArm64: Bool?,
+    injectableArm64e: Bool?
   ) -> DoctorReport {
-    DoctorReport(
-      checks: [
+    // Cooperative: inspect apps you build and sign for development. The
+    // get-task-allow opt-in is honored regardless of SIP, so the *machine* only has
+    // to be Apple Silicon and carry the arm64 boot dylib — no SIP/AMFI/libval lever.
+    // (The per-target get-task-allow + dyld-env preconditions are checked at
+    // attach/launch, not by this machine doctor.)
+    let cooperative = ModeReport(
+      requires: [
+        archCheck(arch),
+        injectableArm64Check(injectableArm64),
+      ],
+      note:
+        "Inspect apps you build and sign for development (get-task-allow). No SIP / AMFI / library-validation changes — your machine is already capable."
+    )
+
+    // Unrestricted: inspect apps you did NOT sign (system / notarized). With no
+    // per-app opt-in, the only path is to lower protections machine-wide — the full
+    // defang stack — and match the system frameworks' arm64e slice.
+    let unrestricted = ModeReport(
+      requires: [
         sipCheck(csrutil),
         amfiCheck(nvramBootArgs),
         libvalCheck(libraryValidation),
         arm64eABICheck(nvramBootArgs),
         archCheck(arch),
-        uitoolBuiltCheck(uitoolBuilt),
+        injectableArm64eCheck(injectableArm64e),
       ],
+      note:
+        "Additionally required only to inspect apps you did NOT sign (system / notarized). Dedicated dev box; reversible from Recovery."
+    )
+
+    return DoctorReport(
+      cooperative: cooperative,
+      unrestricted: unrestricted,
       osBuild: osBuild?.trimmingCharacters(in: .whitespacesAndNewlines))
   }
 
@@ -161,14 +235,18 @@ public enum Doctor {
   /// The arch check passes on the Apple Silicon family — `uname -m` reports `arm64`
   /// on an arm64e-capable host (the `e` ABI variant is a per-binary build flavor,
   /// not a kernel arch `uname` ever prints), so both `arm64` and `arm64e` pass. It
-  /// fails on `x86_64`, where arm64e injection is impossible. The `detail` is the
-  /// concrete reported arch, per the spec's "the built arch" failure token.
+  /// fails on `x86_64`, where injection of the system frameworks is impossible. The
+  /// `detail` is the concrete reported arch, per the spec's "the built arch" token.
+  ///
+  /// Shared by both postures: cooperative needs an Apple Silicon host because a
+  /// stock Xcode app is arm64; unrestricted needs one because the shared cache is
+  /// arm64e on Apple Silicon.
   ///
   /// (deviates: the spec's arch check reads the *injectable's* build slice via
-  /// `file`/`lipo` — that injectable is part of the deferred injection half and is
-  /// not yet built; this build reads the *host* arch via `uname -m` (the task's
+  /// `file`/`lipo`; this build reads the *host* arch via `uname -m` (the task's
   /// mandated probe) as the necessary Apple-Silicon precondition, and accepts
-  /// `arm64` because that is what `uname` reports on an arm64e host.)
+  /// `arm64` because that is what `uname` reports on an arm64e host. The injectable's
+  /// own slice is verified by the `injectable-arm64` / `injectable-arm64e` checks.)
   private static func archCheck(_ arch: String?) -> PreconditionCheck {
     guard let arch = arch?.trimmingCharacters(in: .whitespacesAndNewlines), !arch.isEmpty else {
       return PreconditionCheck(name: "arch", status: .unknown, detail: "unread")
@@ -181,15 +259,29 @@ public enum Doctor {
         remedy: "run uitool on an Apple Silicon (arm64e-capable) host")
   }
 
-  /// The injectable-built check passes when `UIToolBoot` is on disk.
-  private static func uitoolBuiltCheck(_ present: Bool?) -> PreconditionCheck {
+  /// The arm64 injectable check passes when the arm64 `UIToolBoot` is on disk — the
+  /// slice the cooperative path inserts into a stock (arm64) Xcode app.
+  private static func injectableArm64Check(_ present: Bool?) -> PreconditionCheck {
     guard let present else {
-      return PreconditionCheck(name: "uitool-built", status: .unknown, detail: "unread")
+      return PreconditionCheck(name: "injectable-arm64", status: .unknown, detail: "unread")
     }
     return present
-      ? PreconditionCheck(name: "uitool-built", status: .ok, detail: "present")
+      ? PreconditionCheck(name: "injectable-arm64", status: .ok, detail: "present")
       : PreconditionCheck(
-        name: "uitool-built", status: .failed, detail: "absent",
+        name: "injectable-arm64", status: .failed, detail: "absent",
+        remedy: "build the arm64 UIToolBoot injectable (the injection half is not yet built)")
+  }
+
+  /// The arm64e injectable check passes when the arm64e `UIToolBoot` is on disk — the
+  /// slice the unrestricted path needs to match the arm64e system frameworks.
+  private static func injectableArm64eCheck(_ present: Bool?) -> PreconditionCheck {
+    guard let present else {
+      return PreconditionCheck(name: "injectable-arm64e", status: .unknown, detail: "unread")
+    }
+    return present
+      ? PreconditionCheck(name: "injectable-arm64e", status: .ok, detail: "present")
+      : PreconditionCheck(
+        name: "injectable-arm64e", status: .failed, detail: "absent",
         remedy: "build the arm64e UIToolBoot injectable (the injection half is not yet built)")
   }
 }

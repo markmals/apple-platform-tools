@@ -8,10 +8,17 @@ import UIToolCore
 /// `uitool doctor` — verify the injection precondition stack with pure local reads,
 /// before any injection or socket. It captures the output of `csrutil status`,
 /// `nvram boot-args`, `uname -m`, `sw_vers`, the library-validation plist, and the
-/// injectable-presence stat, then hands those *results* to the pure
-/// `UIToolCore.Doctor.report` interpreter and emits the verdict as deterministic
-/// JSON. Every spawn is fenced: a read that fails yields a `nil` input — that
-/// check becomes `unknown` and the machine reads not-ready, never a crash.
+/// two injectable-presence stats, then hands those *results* to the pure
+/// `UIToolCore.Doctor.report` interpreter and emits the two-posture verdict as
+/// deterministic JSON. Every spawn is fenced: a read that fails yields a `nil`
+/// input — that check becomes `unknown` and its posture reads not-usable, never a
+/// crash.
+///
+/// The exit code follows the **cooperative** posture (inspecting apps you build and
+/// sign for development): exit 0 when that common case is usable, otherwise 6. The
+/// machine-wide defang is required *only* for the unrestricted posture (system /
+/// notarized targets), so a stock SIP-enabled Mac is not "not ready" — it is
+/// cooperative-ready the moment the arm64 boot dylib exists.
 ///
 /// `--fix` (sudo auto-remediation of the boot-arg / library-validation checks) is
 /// part of the gated injection half and is **not** wired here: this build detects
@@ -31,20 +38,29 @@ struct Doctor: AsyncParsableCommand {
       arch: await capture(.name("uname"), ["-m"]),
       osBuild: await capture(.name("sw_vers"), ["-buildVersion"]),
       libraryValidation: Doctor.Probe.libraryValidationDisabled(),
-      uitoolBuilt: Doctor.Probe.injectablePresent())
+      injectableArm64: Doctor.Probe.injectableArm64Present(),
+      injectableArm64e: Doctor.Probe.injectableArm64ePresent())
     try Output.emit(report)
-    // The report is the stdout payload; the exit code is the branchable verdict —
-    // exit 6 (PRECONDITION_FAILED) when the machine is not injection-ready.
-    guard report.ready else {
-      let unmet = report.checks.filter { $0.status != .ok }.map(\.name).joined(separator: ", ")
-      Diagnostics.fail(UIToolError.preconditionFailed("machine not injection-ready — \(unmet)"))
+    // The report is the stdout payload; the exit code follows the COOPERATIVE
+    // posture — the common case (your own get-task-allow apps) — not the defanged
+    // one. Exit 6 (PRECONDITION_FAILED) when that path is not usable. Today it is
+    // exit 6 only because the arm64 boot dylib is the deferred injection half, NOT
+    // because the machine needs a SIP/AMFI/library-validation defang.
+    guard report.cooperative.usable else {
+      let unmet =
+        report.cooperative.requires
+        .filter { $0.status != .ok }
+        .map(\.name)
+        .joined(separator: ", ")
+      Diagnostics.fail(
+        UIToolError.preconditionFailed("cooperative injection not usable — \(unmet)"))
     }
   }
 }
 
 extension Doctor {
-  /// The two non-Subprocess precondition reads — the library-validation plist and
-  /// the injectable-presence stat — kept off the command struct so `run()` stays a
+  /// The non-Subprocess precondition reads — the library-validation plist and the
+  /// two injectable-presence stats — kept off the command struct so `run()` stays a
   /// thin spawn-and-emit edge. The four command reads go through `capture`; the
   /// pure interpretation is `UIToolCore.Doctor.report`.
   enum Probe {
@@ -57,10 +73,18 @@ extension Doctor {
       return dict["DisableLibraryValidation"] as? Bool
     }
 
-    /// Whether the arm64e `UIToolBoot` injectable is on disk. The injection half is
-    /// not yet built, so this is honestly `false` here (present-and-readable but
-    /// absent), never `nil` — the disk read itself does not fail.
-    static func injectablePresent() -> Bool {
+    /// Whether the arm64 `UIToolBoot` injectable (the cooperative-path slice for a
+    /// stock arm64 Xcode app) is on disk. The injection half is not yet built, so
+    /// this is honestly `false` here (present-and-readable but absent), never `nil`
+    /// — the disk read itself does not fail.
+    static func injectableArm64Present() -> Bool {
+      false
+    }
+
+    /// Whether the arm64e `UIToolBoot` injectable (the unrestricted-path slice that
+    /// matches the arm64e system frameworks) is on disk. Honestly `false` for the
+    /// same reason — the deferred injection half — never `nil`.
+    static func injectableArm64ePresent() -> Bool {
       false
     }
   }

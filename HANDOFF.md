@@ -39,7 +39,7 @@ The two `mac-dev-skills` tools and PrivateHeaderKit are real, tested code — th
 
 Chosen over multi-package and over Tuist/Bazel. One `Package.swift` whose internal divide is by *target* — one executable per tool, library targets for the shared foundations. Rationale: one dependency graph, one `swift build`, atomic cross-cutting edits; the per-target boundary still gives each tool and library a clean home that honors the repo's "one responsibility per file" rule.
 
-**Accepted cost:** a single `swift-tools-version` and one platform floor. Mitigation: pin the floor at the common denominator, gate higher-OS features per-target with `@available`, and enforce hard runtime requirements (uitool's Tahoe + arm64e + defanged machine) at runtime via `doctor` rather than in the manifest. arm64e flags / codesigning / injection are build-script concerns, never baked into a product.
+**Accepted cost:** a single `swift-tools-version` and one platform floor. Mitigation: pin the floor at the common denominator, gate higher-OS features per-target with `@available`, and enforce hard runtime requirements (uitool's Tahoe + arm64e, plus the defanged machine **only for non-cooperative targets** — apps you did not sign) at runtime via `doctor` rather than in the manifest. arm64e flags / codesigning / injection are build-script concerns, never baked into a product.
 
 ### 4.2 Absorb, don't submodule (2026-06-11)
 
@@ -51,7 +51,7 @@ The four local projects move in as source; the monorepo becomes the single sourc
 - **Live runtime introspection** (`uitool`) over `RuntimeKit` (+ `UIToolBoot`).
 - **SDK knowledge** (`sdk-api`, `sdk-search`) over `SDKIndex`.
 
-All three over `AgentCLI`. Clusters are ordered by cost/danger — SDK knowledge is pure and offline; static analysis spawns subprocesses and reads binaries; runtime introspection injects into a live process on a defanged machine. Agents reach cheapest-first.
+All three over `AgentCLI`. Clusters are ordered by cost/danger — SDK knowledge is pure and offline; static analysis spawns subprocesses and reads binaries; runtime introspection injects into a live process (on a stock Mac for your own `get-task-allow` apps; on a defanged machine only for apps you did not sign). Agents reach cheapest-first.
 
 ### 4.4 The purity boundary, repo-wide (2026-06-11)
 
@@ -73,7 +73,7 @@ Phased so each phase ends green and the riskiest work (injection) is last.
 
 These are reverse-engineering instruments used for legitimate Apple-platform development and research. The discipline that keeps them safe:
 
-- **Injection is defanged-machine-only.** `uitool` needs SIP + AMFI + library-validation off — a system-wide regression, verified at runtime by `doctor`, on a machine holding no real data or credentials. Reversible from Recovery.
+- **The defanged machine is for non-cooperative targets only.** macOS gates injection per target. For apps **you build and sign** for development (a debug build carries `get-task-allow` — the opt-in to being debugged/injected), `uitool` runs on a **stock, SIP-enabled Mac** with no machine-wide changes, exactly as lldb/Xcode attach to your own apps; it needs only the arm64 injectable built. The system-wide defang — SIP + AMFI + library-validation off, a system-wide regression on a box holding no real data, reversible from Recovery — is required **only to inspect apps you did not sign** (system / notarized), which ship hardened with no per-app lever. `doctor` reports both postures at runtime.
 - **Containment is a mechanism.** The signed injectable dylib/framework are `.gitignore`d build outputs, never committed, never added to a shippable target or release CI job. A build/commit guard enforces it.
 - **Knowledge crosses into products; tools never do.** A font name, a constraint, a header signature, a disassembled routine leaves the repo and informs real work. The injection step does not.
 - **Licenses ride with the tools.** FLEX is BSD, dev-only (no App Store); `redump` inherits IDA/Hopper terms.

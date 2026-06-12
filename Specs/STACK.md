@@ -81,9 +81,9 @@ Apple publishes no `/llms.txt` for these frameworks — WebFetch the canonical d
 | IPC | Unix domain socket, newline-delimited JSON, versioned schema |
 | Concurrency | Swift Concurrency (CLI); GCD main-thread marshaling (server — AppKit reads must run on the target's main thread) |
 | Injection | `DYLD_INSERT_LIBRARIES` relaunch (primary); MIP-style `launchservicesd` hook + Mach thread-hijack (first-party, fragile) |
-| Preconditions | `uitool doctor`: `csrutil`, `nvram boot-args` (`amfi_get_out_of_my_way`, `-arm64e_preview_abi`), `DisableLibraryValidation`, arch, OS build |
-| Signing | `codesign` ad-hoc, **arm64e**, `--options runtime`; dylib/framework carry `disable-library-validation` — **never notarized, never distributed** |
+| Preconditions | `uitool doctor` reports **two postures**: **cooperative** (inspect your own `get-task-allow` apps — stock SIP-on Mac, only the arm64 injectable) and **unrestricted** (inspect apps you did NOT sign — `csrutil`, `nvram boot-args` (`amfi_get_out_of_my_way`, `-arm64e_preview_abi`), `DisableLibraryValidation`, arch, the arm64e injectable). The defang is for **non-cooperative targets** only. |
+| Signing | `codesign` ad-hoc; the injectable is built **arm64** for cooperative (your own apps) and **arm64e** (`--options runtime`, `disable-library-validation`) to match the system shared cache for unrestricted (apps you did not sign) — **never notarized, never distributed** in either posture |
 | Test oracle | `SampleAppKit` (known frames/fonts/constraints) under `DYLD_INSERT_LIBRARIES`; first-party smoke last, dev-box only |
 | References | [MIP](https://github.com/LIJI32/MIP) · [yabai loader](https://github.com/koekeishiya/yabai/blob/master/src/osax/loader.m) · [SpecterOps "ARM-ed and Dangerous"](https://specterops.io/blog/2025/08/21/armed-and-dangerous-dylib-injection-on-macos/) |
 
-The runtime cluster weakens the whole machine (SIP + AMFI + LV off) — dedicated dev box only. See [ARCHITECTURE.md](ARCHITECTURE.md) → "Dual-use & safety posture".
+The runtime cluster weakens the whole machine (SIP + AMFI + LV off) **only for non-cooperative targets** — apps you did not sign — on a dedicated dev box. Inspecting your own `get-task-allow` apps runs on a stock, SIP-enabled Mac. See [ARCHITECTURE.md](ARCHITECTURE.md) → "Dual-use & safety posture" → "Two injection postures".
