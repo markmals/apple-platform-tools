@@ -41,7 +41,7 @@ Apple publishes no `/llms.txt` for these frameworks — WebFetch the canonical d
 | --- | --- |
 | Today | macOS, Apple Silicon. Host-side CLIs that read binaries, SDKs, and other macOS processes. |
 | Package floor | the common denominator of the absorbed code; higher-OS features gated per-target with `@available` |
-| Runtime preconditions | tool-specific and enforced at runtime, not in the manifest (e.g. `flexscope doctor`) |
+| Runtime preconditions | tool-specific and enforced at runtime, not in the manifest (e.g. `uitool doctor`) |
 | Planned | `.iOS` / `.macCatalyst` added to the package when `RuntimeKit`'s Swift UIKit rewrite begins (headless iOS / Catalyst inspection) — not before |
 
 ## Cluster: SDK knowledge — `sdk-api`, `sdk-search` (`SDKIndex`)
@@ -68,7 +68,7 @@ Apple publishes no `/llms.txt` for these frameworks — WebFetch the canonical d
 | `redump` disassembly | drives [IDA](https://hex-rays.com/ida-pro/) (idalib / IDAPython) and [Hopper](https://www.hopperapp.com/) (Python scripting) — **licensed, heavy deps**; the dependency-free half (universal binaries, dyld cache, ObjC metadata) comes from `BinaryFoundation` |
 | License note | FLEX-derived code is BSD (dev-only, no App Store); `redump` inherits IDA/Hopper licensing |
 
-## Cluster: live runtime introspection — `flexscope` (`RuntimeKit` + `FlexScopeBoot`)
+## Cluster: live runtime introspection — `uitool` (`RuntimeKit` + `UIToolBoot`)
 
 | Concern | Choice |
 | --- | --- |
@@ -77,11 +77,11 @@ Apple publishes no `/llms.txt` for these frameworks — WebFetch the canonical d
 | View walker | Swift `AppKitWalker` (ported from `FLEXAppKitWalker`) — `NSApp` → `NSWindow` → `NSView`/`CALayer`, frames, `NSFont`/`NSColor` decomposition, constraints → immutable `Sendable` snapshots |
 | Frameworks read | [AppKit](https://developer.apple.com/documentation/appkit) · [Core Animation](https://developer.apple.com/documentation/quartzcore) |
 | SwiftUI surface | [`NSHostingView`](https://developer.apple.com/documentation/swiftui/nshostingview) (read the emitted AppKit/CALayer scaffold only) |
-| Bootstrap | `FlexScopeBoot` — the one native trigger: an injected ObjC dylib whose `__attribute__((constructor))` `dlopen`s the Swift `FlexScopeServer` (so the Swift runtime initializes via a normal `dlopen`, not via injection) |
+| Bootstrap | `UIToolBoot` — the one native trigger: an injected ObjC dylib whose `__attribute__((constructor))` `dlopen`s the Swift `UIToolServer` (so the Swift runtime initializes via a normal `dlopen`, not via injection) |
 | IPC | Unix domain socket, newline-delimited JSON, versioned schema |
 | Concurrency | Swift Concurrency (CLI); GCD main-thread marshaling (server — AppKit reads must run on the target's main thread) |
 | Injection | `DYLD_INSERT_LIBRARIES` relaunch (primary); MIP-style `launchservicesd` hook + Mach thread-hijack (first-party, fragile) |
-| Preconditions | `flexscope doctor`: `csrutil`, `nvram boot-args` (`amfi_get_out_of_my_way`, `-arm64e_preview_abi`), `DisableLibraryValidation`, arch, OS build |
+| Preconditions | `uitool doctor`: `csrutil`, `nvram boot-args` (`amfi_get_out_of_my_way`, `-arm64e_preview_abi`), `DisableLibraryValidation`, arch, OS build |
 | Signing | `codesign` ad-hoc, **arm64e**, `--options runtime`; dylib/framework carry `disable-library-validation` — **never notarized, never distributed** |
 | Test oracle | `SampleAppKit` (known frames/fonts/constraints) under `DYLD_INSERT_LIBRARIES`; first-party smoke last, dev-box only |
 | References | [MIP](https://github.com/LIJI32/MIP) · [yabai loader](https://github.com/koekeishiya/yabai/blob/master/src/osax/loader.m) · [SpecterOps "ARM-ed and Dangerous"](https://specterops.io/blog/2025/08/21/armed-and-dangerous-dylib-injection-on-macos/) |

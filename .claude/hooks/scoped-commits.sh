@@ -30,7 +30,7 @@ fail() { echo "$1" >&2; exit 2; }
 # Conventional Commits habit: a `type(subscope):` prefix — a word glued to `(...)`
 # with no space. Scoped Commits is scope-first; a ticket goes after a space.
 if echo "$command" | grep -qE '[a-z]+\([a-z0-9_./-]+\):[[:space:]]'; then
-  fail "Looks like a Conventional Commits 'type(scope):' subject. This repo uses Scoped Commits — lead with a defined scope: '<scope>: <description>' (ticket after a space, e.g. 'flexscope (PROJ-12): ...'). See .claude/rules/commit-discipline.md."
+  fail "Looks like a Conventional Commits 'type(scope):' subject. This repo uses Scoped Commits — lead with a defined scope: '<scope>: <description>' (ticket after a space, e.g. 'uitool (PROJ-12): ...'). See .claude/rules/commit-discipline.md."
 fi
 
 # Shape gate — always enforced.

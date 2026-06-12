@@ -38,18 +38,18 @@ If you're tempted to encode a behavioral contract only in code, write a spec ins
 │   ├── MachOFoundation/ ← Mach-O + dyld-shared-cache reading
 │   ├── RuntimeKit/      ← headless ObjC-runtime reflection + AppKit walker
 │   ├── SDKIndex/        ← symbol-graph extraction/query + HIG pattern search
-│   └── <tool>/          ← one executable per tool (sdk-api, sdk-search, headerdump, redump, flexscope, …)
+│   └── <tool>/          ← one executable per tool (sdk-api, sdk-search, headerdump, redump, uitool, …)
 └── Tests/
 ```
 
-The three capability clusters — **static binary analysis** (`headerdump`, `redump` on `MachOFoundation`), **live runtime introspection** (`flexscope` on `RuntimeKit`), **SDK knowledge** (`sdk-api`, `sdk-search` on `SDKIndex`) — are described in `Specs/ARCHITECTURE.md`. Reach for them cheapest-first: SDK knowledge → static analysis → live injection.
+The three capability clusters — **static binary analysis** (`headerdump`, `redump` on `MachOFoundation`), **live runtime introspection** (`uitool` on `RuntimeKit`), **SDK knowledge** (`sdk-api`, `sdk-search` on `SDKIndex`) — are described in `Specs/ARCHITECTURE.md`. Reach for them cheapest-first: SDK knowledge → static analysis → live injection.
 
 ## Working with specs
 
 - **Reverse pointers are mandatory.** Every unit that realizes a spec carries `// SPEC: <id>`. Tests are tagged with the spec IDs they verify. See `Specs/CONVENTIONS.md`.
 - **Deviations are explicit.** `// SPEC: <id> (deviates: <reason>)`; `// SPEC: manual` for incidental code.
 - **Stories use Gherkin** with the coding agent as the user. Scenarios have stable sub-IDs tests trace back to. See `writing-user-stories`.
-- **Test pure-first.** Each tool's pure core (JSON projection, ranking, grammar, Mach-O structure interpretation) is unit-tested on any Mac with checked-in fixtures or an embedded corpus — no privileges, no network. Effectful behavior is verified against a tool-appropriate oracle (flexscope: the `SampleAppKit` known-geometry app under `DYLD_INSERT_LIBRARIES`; headerdump: a known framework; sdk-api: a checked-in symbol graph). If a behavior needs injection or a paid disassembler to test, the purity boundary was drawn wrong.
+- **Test pure-first.** Each tool's pure core (JSON projection, ranking, grammar, Mach-O structure interpretation) is unit-tested on any Mac with checked-in fixtures or an embedded corpus — no privileges, no network. Effectful behavior is verified against a tool-appropriate oracle (uitool: the `SampleAppKit` known-geometry app under `DYLD_INSERT_LIBRARIES`; headerdump: a known framework; sdk-api: a checked-in symbol graph). If a behavior needs injection or a paid disassembler to test, the purity boundary was drawn wrong.
 
 ## Slash commands
 
@@ -78,7 +78,7 @@ The three capability clusters — **static binary analysis** (`headerdump`, `red
 | `verification-before-completion` | Before claiming work complete. Run the verifying command this turn; evidence before claims. |
 | `systematic-debugging` | Any bug or unexpected behavior. Root cause before fix. |
 | `triaging-defects` | When `DEFECTS.md` is non-empty in a polish pass. |
-| `macos-development` | Writing Swift/ObjC code. SwiftPM + ArgumentParser + Swift Testing + ObjC interop + codesign idioms; the AppKit-introspection + injection idioms apply to the runtime cluster (`flexscope`/`RuntimeKit`). |
+| `macos-development` | Writing Swift/ObjC code. SwiftPM + ArgumentParser + Swift Testing + ObjC interop + codesign idioms; the AppKit-introspection + injection idioms apply to the runtime cluster (`uitool`/`RuntimeKit`). |
 
 ## Local tooling
 

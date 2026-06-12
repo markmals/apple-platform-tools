@@ -2,7 +2,7 @@
 # Build, ad-hoc sign, and install the distributable CLIs to ~/.local/bin.
 #
 # Installs ONLY the "safe" tools — the SDK-knowledge and static-analysis
-# clusters. The runtime cluster (flexscope + its injected dylib/framework) is
+# clusters. The runtime cluster (uitool + its injected dylib/framework) is
 # NEVER installed by this script: it has a separate, dev-box-only signed flow
 # and must never be distributed. See Specs/ARCHITECTURE.md → "Dual-use & safety".
 #

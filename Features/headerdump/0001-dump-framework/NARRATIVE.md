@@ -52,7 +52,7 @@ against, recovered offline from bytes already on the machine.
 - Not a symbol *existence* check — that is `sdk-api`. This tool recovers full
   declarations; it does not answer "does `X` exist on macOS 26?".
 - Not a live-process inspector — it reads images on disk (or in the shared
-  cache), not the AppKit object graph of a running app. That is `flexscope`.
+  cache), not the AppKit object graph of a running app. That is `uitool`.
 - Not a disassembler — it recovers declarations from metadata, not function
   bodies from instructions.
 - Not (today) an agent-JSON query tool. Its output is header *files*, not a

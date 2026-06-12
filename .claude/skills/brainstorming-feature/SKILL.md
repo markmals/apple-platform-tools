@@ -164,6 +164,6 @@ Use `spec:` as the commit prefix for everything authored by this skill. Do not i
 ## Anti-patterns
 
 - **No design before code.** Every feature goes through this skill, even small ones. The skill itself can be short for small features (a few questions, two stories, one model) — but it must be invoked.
-- **Mockup mode.** Out of scope here. Verify behavior against the tool's fixtures, embedded corpus, or (for flexscope) the `SampleAppKit` oracle once code exists — see `macos-development` → Verifying.
+- **Mockup mode.** Out of scope here. Verify behavior against the tool's fixtures, embedded corpus, or (for uitool) the `SampleAppKit` oracle once code exists — see `macos-development` → Verifying.
 - **Branching ceremony.** No "create a branch first" steps. Default workspace is `main`.
 - **Plan documents.** We don't have plan.md / tasks.md. The feature folder _is_ the plan.

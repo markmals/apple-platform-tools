@@ -7,7 +7,7 @@ argument-hint: <spec-id>
 
 You are applying a single spec to the package. The spec ID is: `$ARGUMENTS`.
 
-Argument format: `<spec-id>` — a stable ID from a spec's frontmatter (e.g. `command.sdk-api.check`, `domain.agent-cli`, `story.headerdump.dump-framework`, `error.flexscope.stale-node`). The ID names the tool or shared library it lives under; you don't pass a target separately.
+Argument format: `<spec-id>` — a stable ID from a spec's frontmatter (e.g. `command.sdk-api.check`, `domain.agent-cli`, `story.headerdump.dump-framework`, `error.uitool.stale-node`). The ID names the tool or shared library it lives under; you don't pass a target separately.
 
 ## Intent
 

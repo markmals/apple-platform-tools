@@ -7,7 +7,7 @@ argument-hint: <spec-id>
 
 You are running a standalone adversarial review of one spec: `$ARGUMENTS`.
 
-Argument format: `<spec-id>` — a stable ID from a spec's frontmatter (e.g. `error.flexscope.stale-node`).
+Argument format: `<spec-id>` — a stable ID from a spec's frontmatter (e.g. `error.uitool.stale-node`).
 
 ## Intent
 

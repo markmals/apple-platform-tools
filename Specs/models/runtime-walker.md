@@ -272,7 +272,7 @@ touches is read on main and immediately decomposed. The snapshot value types
 (`ConstraintNode`, `ConstraintDescription`, `ConstraintItem`, `IntrinsicSize`)
 retain no AppKit handles — once built they cross threads, outlive the view, and
 encode off-main. Node-id stringification of each item and deterministic JSON
-rounding of the raw `Double`s are downstream (`FlexScopeCore`) concerns, not this
+rounding of the raw `Double`s are downstream (`UIToolCore`) concerns, not this
 layer's.
 
 ## `ViewSnapshot` / `WindowSnapshot` — the live view tree

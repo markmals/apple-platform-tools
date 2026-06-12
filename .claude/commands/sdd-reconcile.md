@@ -7,7 +7,7 @@ argument-hint: (no arguments)
 
 This command is **inert** in this repo.
 
-Reconciliation existed to propagate one platform's edited implementation back into the spec and out to the *other* platforms. There are no other platforms here: `apple-platform-tools` is one SwiftPM package, and each tool (`sdk-api`, `sdk-search`, `headerdump`, `redump`, `flexscope`) and shared library (`AgentCLI`, `MachOFoundation`, `RuntimeKit`, `SDKIndex`) is its own vertical — spec → failing test → implementation. There is no source-of-truth platform to reconcile *from*, and no sibling platform to reconcile *to*.
+Reconciliation existed to propagate one platform's edited implementation back into the spec and out to the *other* platforms. There are no other platforms here: `apple-platform-tools` is one SwiftPM package, and each tool (`sdk-api`, `sdk-search`, `headerdump`, `redump`, `uitool`) and shared library (`AgentCLI`, `MachOFoundation`, `RuntimeKit`, `SDKIndex`) is its own vertical — spec → failing test → implementation. There is no source-of-truth platform to reconcile *from*, and no sibling platform to reconcile *to*.
 
 So the lateral motion this command performed doesn't exist. When an implementation drifts ahead of its spec, the fix is vertical and local:
 

@@ -8,7 +8,7 @@ file_path=$(echo "$input" | jq -r '.tool_input.file_path // empty')
 
 case "$file_path" in
     *.xcodeproj/* | *.xcworkspace/*)
-        echo "Blocked: '$file_path' is a generated Xcode project. flexscope builds with SwiftPM — edit Package.swift / Sources instead." >&2
+        echo "Blocked: '$file_path' is a generated Xcode project. uitool builds with SwiftPM — edit Package.swift / Sources instead." >&2
         exit 2
         ;;
     */.build/* | */DerivedData/* | */.swiftpm/*)

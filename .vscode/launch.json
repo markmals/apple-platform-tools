@@ -1,0 +1,84 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:apple-platform-tools}",
+            "name": "Debug sdk-api",
+            "target": "sdk-api",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug sdk-api"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:apple-platform-tools}",
+            "name": "Release sdk-api",
+            "target": "sdk-api",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release sdk-api"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:apple-platform-tools}",
+            "name": "Debug sdk-search",
+            "target": "sdk-search",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug sdk-search"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:apple-platform-tools}",
+            "name": "Release sdk-search",
+            "target": "sdk-search",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release sdk-search"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:apple-platform-tools}",
+            "name": "Debug headerdump",
+            "target": "headerdump",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug headerdump"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:apple-platform-tools}",
+            "name": "Release headerdump",
+            "target": "headerdump",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release headerdump"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:apple-platform-tools}",
+            "name": "Debug redump",
+            "target": "redump",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug redump"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:apple-platform-tools}",
+            "name": "Release redump",
+            "target": "redump",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release redump"
+        }
+    ]
+}

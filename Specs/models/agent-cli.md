@@ -33,7 +33,7 @@ Exit codes are the control channel; a tool never exits `0` on failure, and a zer
 - `ExitStatus.success` = **0**
 - `ExitStatus.usage` = **2** (a usage/validation error; matches ArgumentParser's validation exit)
 
-Tools extend the space **above 2** with their own meanings via the `AgentError` protocol (e.g. flexscope's `stale-node` = 5, `precondition` = 6, `timeout` = 7). `AgentError` carries:
+Tools extend the space **above 2** with their own meanings via the `AgentError` protocol (e.g. uitool's `stale-node` = 5, `precondition` = 6, `timeout` = 7). `AgentError` carries:
 
 - `exitCode: Int32` — the code to exit with.
 - `message: String` — a human-readable diagnostic, written to **stderr**.

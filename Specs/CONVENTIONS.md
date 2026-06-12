@@ -41,7 +41,7 @@ Features/<tool>/<NNNN>-<slug>/  ← feature-scoped, namespaced by tool
 
 ### Per-tool namespacing
 
-Features are grouped by tool: `Features/<tool>/<NNNN>-<slug>/`, where `<tool>` is the executable's name (`flexscope`, `headerdump`, `sdk-api`, …). Numbering restarts per tool, so each tool owns a clean `0001…` sequence and the monorepo's growth stays legible. A feature slug is kebab-case.
+Features are grouped by tool: `Features/<tool>/<NNNN>-<slug>/`, where `<tool>` is the executable's name (`uitool`, `headerdump`, `sdk-api`, …). Numbering restarts per tool, so each tool owns a clean `0001…` sequence and the monorepo's growth stays legible. A feature slug is kebab-case.
 
 ### One logical thing per file
 
@@ -100,9 +100,9 @@ A kind can grow over time (e.g., `migration` for schema changes), but adding a k
 
 IDs are dotted, lowercase, hierarchical, and stable. The first segment is the kind prefix; the rest narrow to a specific instance.
 
-**Good:** `domain.macho-image`, `vm.flexscope.tree`, `story.headerdump.dump-framework`, `command.sdk-api.check`, `error.flexscope.stale-node`
+**Good:** `domain.macho-image`, `vm.uitool.tree`, `story.headerdump.dump-framework`, `command.sdk-api.check`, `error.uitool.stale-node`
 
-**Bad:** `Image`, `headerdump/dump`, `vm-flexscope-tree`, `viewmodel.flexscope.tree` (use `vm.`)
+**Bad:** `Image`, `headerdump/dump`, `vm-uitool-tree`, `viewmodel.uitool.tree` (use `vm.`)
 
 ### Stability rules
 
@@ -116,7 +116,7 @@ Filename matches the trailing segment of the ID, with dots → hyphens between s
 
 - `domain.macho-image` → `models/macho-image.md`
 - `story.headerdump.dump-framework` → `stories/headerdump.dump-framework.md`
-- `vm.flexscope.tree` → `view-models/flexscope.tree.md`
+- `vm.uitool.tree` → `view-models/uitool.tree.md`
 
 Dots are legal in macOS/Linux filenames and survive grep, git, and most editors. Keep them.
 
@@ -126,7 +126,7 @@ Every implementation file, class, or function that realizes a spec carries the s
 
 ### Per-language form
 
-Most tools are **Swift**. The runtime cluster (`RuntimeKit`, `FlexScopeBoot`) is **Objective-C / C** (it touches the ObjC runtime and AppKit on the target's main thread). All use the same `// SPEC:` line comment.
+Most tools are **Swift**. The runtime cluster (`RuntimeKit`, `UIToolBoot`) is **Objective-C / C** (it touches the ObjC runtime and AppKit on the target's main thread). All use the same `// SPEC:` line comment.
 
 ```swift
 // SPEC: command.sdk-api.check
@@ -141,7 +141,7 @@ struct Check: AsyncParsableCommand { /* ... */ }
 
 ```c
 // SPEC: domain.injection
-__attribute__((constructor)) static void flexscope_boot(void) { /* ... */ }
+__attribute__((constructor)) static void uitool_boot(void) { /* ... */ }
 ```
 
 ### Granularity

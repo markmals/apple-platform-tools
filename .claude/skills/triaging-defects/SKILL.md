@@ -68,7 +68,7 @@ If you find yourself classifying the same kind of defect as "won't fix" repeated
 ## Process per entry
 
 1. **Read the entry.** Read it fully. If repro steps are unclear, ask the user — don't guess at intent.
-2. **Reproduce.** For non-trivial defects, invoke `systematic-debugging` and follow the four-phase discipline. Reproduce against the tool-appropriate oracle — checked-in fixtures or an embedded corpus for the pure tools, or flexscope's `SampleAppKit` (or a live target) for injection-dependent behavior — and observe the behavior firsthand (see `macos-development` → Verifying).
+2. **Reproduce.** For non-trivial defects, invoke `systematic-debugging` and follow the four-phase discipline. Reproduce against the tool-appropriate oracle — checked-in fixtures or an embedded corpus for the pure tools, or uitool's `SampleAppKit` (or a live target) for injection-dependent behavior — and observe the behavior firsthand (see `macos-development` → Verifying).
 3. **Classify.** State the bucket and the reasoning before acting. Apply the promotion test (below) explicitly — don't classify "fix in place" by default just because that's the fastest path.
 4. **Execute** the resolution for that bucket.
 5. **Delete** the entry from `DEFECTS.md`. Also delete any screenshot under `.defects/` that the entry referenced — orphaned screenshots are noise.
@@ -133,5 +133,5 @@ When you delete an entry, also delete any screenshot path it referenced. Run `ls
 - `systematic-debugging` — the four-phase discipline for reproducing and root-causing each entry before classifying.
 - `brainstorming-feature` — for the promote-to-spec path when the amendment is large enough that it warrants spec-style exploration (new story, new flow). Smaller amendments (a scenario, an error entry) can be edited directly.
 - `verification-before-completion` — the gate before claiming an entry is fixed. Run the verifying command; read its output; only then delete the entry.
-- `macos-development` (→ Verifying) — reproducing flexscope runtime defects against the `SampleAppKit` oracle or a live target.
+- `macos-development` (→ Verifying) — reproducing uitool runtime defects against the `SampleAppKit` oracle or a live target.
 - `implementing-a-spec` — the workflow that `/sdd-apply` uses to land a promoted spec change.

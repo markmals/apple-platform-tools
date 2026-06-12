@@ -71,9 +71,9 @@ struct SdkApiCheckTests {
 
 ```objc
 // ObjC + XCTest — RuntimeKit only (the FLEX-derived runtime core)
-// SPEC: error.flexscope.stale-node
+// SPEC: error.uitool.stale-node
 @implementation RuntimeNodeTests
-// [scenario.flexscope.stale-node.rejected]
+// [scenario.uitool.stale-node.rejected]
 - (void)testStaleNodeIdIsRejected {
     RuntimeNode *node = [self capturedNodeThenInvalidated];
     XCTAssertNil([node readIvarNamed:@"_title"]);

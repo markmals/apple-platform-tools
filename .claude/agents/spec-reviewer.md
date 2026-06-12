@@ -21,7 +21,7 @@ git diff --name-only HEAD -- 'Specs/**.md' 'Features/**.md'
 
 ### Frontmatter (P0 if missing/invalid)
 
-- `id` present, matches the file's slug, follows kind-prefix convention (`command.*`, `domain.*`, `story.*`, `protocol.*`, `error.*`, etc. — e.g. `command.sdk-api.check`, `domain.agent-cli`, `story.headerdump.dump-framework`, `error.flexscope.stale-node`; see CONVENTIONS.md for the taxonomy)
+- `id` present, matches the file's slug, follows kind-prefix convention (`command.*`, `domain.*`, `story.*`, `protocol.*`, `error.*`, etc. — e.g. `command.sdk-api.check`, `domain.agent-cli`, `story.headerdump.dump-framework`, `error.uitool.stale-node`; see CONVENTIONS.md for the taxonomy)
 - `kind` present and one of the allowed values
 - `depends-on` is a list of valid spec IDs that **exist** in the repo (rg-check each)
 - No circular dependency in the depends-on chain (walk it transitively)

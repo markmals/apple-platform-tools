@@ -26,7 +26,7 @@ This directory holds the **canonical templates** for a new feature. When startin
     cp .claude/templates/feature/NARRATIVE.md Features/<tool>/<NNNN>-<slug>/NARRATIVE.md
     ```
 3. Replace placeholders in the copied files:
-    - `<tool>` — the executable's name (e.g. `sdk-api`, `headerdump`, `flexscope`)
+    - `<tool>` — the executable's name (e.g. `sdk-api`, `headerdump`, `uitool`)
     - `<feature-slug>` — the kebab-case slug (e.g. `dump-framework`)
     - `<id>` — a stable dotted ID (e.g. `story.headerdump.dump-framework`)
     - Section content

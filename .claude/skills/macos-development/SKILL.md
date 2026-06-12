@@ -7,11 +7,11 @@ description: Use when writing or modifying Swift/ObjC code anywhere in apple-pla
 
 How to write this repo's code. For the _workflow_ of implementing a spec, see `implementing-a-spec`. For _what_ to build, read the spec and `Specs/ARCHITECTURE.md`.
 
-apple-platform-tools is **one SwiftPM package, many targets**. Most tools are pure Swift CLIs that link `AgentCLI` and a foundation. The runtime cluster (`flexscope`) adds ObjC and injection. The shape by target:
+apple-platform-tools is **one SwiftPM package, many targets**. Most tools are pure Swift CLIs that link `AgentCLI` and a foundation. The runtime cluster (`uitool`) adds ObjC and injection. The shape by target:
 
-- **A tool** (`sdk-api`, `sdk-search`, `headerdump`, `redump`, `flexscope`) — an `executableTarget`: an ArgumentParser CLI that parses args, calls the shell (subprocess / RPC / injection / a foundation API), and hands the result to the pure `AgentCLI` encoder.
+- **A tool** (`sdk-api`, `sdk-search`, `headerdump`, `redump`, `uitool`) — an `executableTarget`: an ArgumentParser CLI that parses args, calls the shell (subprocess / RPC / injection / a foundation API), and hands the result to the pure `AgentCLI` encoder.
 - **A foundation** (`AgentCLI`, `MachOFoundation`, `SDKIndex`, `RuntimeKit`) — a library `target`: the expensive, reusable logic, written once and unit-tested in isolation.
-- **`FlexScopeBoot`** — the injected ObjC bootstrap dylib for the runtime cluster; a `__attribute__((constructor))` starts a headless server. ObjC, arm64e, signed by the build script, never committed.
+- **`UIToolBoot`** — the injected ObjC bootstrap dylib for the runtime cluster; a `__attribute__((constructor))` starts a headless server. ObjC, arm64e, signed by the build script, never committed.
 
 ## Stack at a glance
 
@@ -67,7 +67,7 @@ If a behavior needs injection, a simulator, or a paid disassembler to test, the 
 
 ## ObjC ↔ Swift interop (runtime cluster)
 
-`RuntimeKit`'s reflection engine and walker, and the `FlexScopeBoot` server, are ObjC (they touch the runtime and AppKit on the target's main thread). A Swift CLI talks to them **only over the socket** — it does not link AppKit reads directly. Bridge ObjC into Swift via the target's umbrella header; keep the seam narrow.
+`RuntimeKit`'s reflection engine and walker, and the `UIToolBoot` server, are ObjC (they touch the runtime and AppKit on the target's main thread). A Swift CLI talks to them **only over the socket** — it does not link AppKit reads directly. Bridge ObjC into Swift via the target's umbrella header; keep the seam narrow.
 
 ## AppKit introspection — you are *reading*, never building (runtime cluster)
 
@@ -113,13 +113,13 @@ struct OutputTests {
 
 - The `.spec("<id>")` trait carries the spec ID; the `.scenario("<id>")` trait pins the Gherkin scenario; the function name is a raw identifier — its natural-language text *is* the test name. Both traits live in the shared `TestSupport` target. Drift tooling greps `.spec("…")` / `.scenario("…")` (Swift), and the `// SPEC:` / `// [scenario.<id>]` comment form for RuntimeKit's ObjC/XCTest.
 - Pure-core suites need no privileges and run on any Mac.
-- Tool-appropriate oracles for the effectful layer: checked-in symbol-graph fixtures (`sdk-api`), an embedded corpus (`sdk-search`), a known framework (`headerdump`), the `SampleAppKit` known-geometry app under `DYLD_INSERT_LIBRARIES` (`flexscope`). Every injection integration test asserts the **target is still alive** after the op, with a watchdog for main-thread deadlock.
+- Tool-appropriate oracles for the effectful layer: checked-in symbol-graph fixtures (`sdk-api`), an embedded corpus (`sdk-search`), a known framework (`headerdump`), the `SampleAppKit` known-geometry app under `DYLD_INSERT_LIBRARIES` (`uitool`). Every injection integration test asserts the **target is still alive** after the op, with a watchdog for main-thread deadlock.
 
 ## Verifying
 
 1. `mise run test` — pure-core unit + golden-file tests. Any Mac.
 2. **Oracle** — the tool-appropriate gate above. If a tool can't nail a fact you placed yourself, it's wrong.
-3. `flexscope doctor` (runtime cluster) — confirm SIP/AMFI/LV/arch each independently before any first-party attempt.
+3. `uitool doctor` (runtime cluster) — confirm SIP/AMFI/LV/arch each independently before any first-party attempt.
 4. **First-party (manual, dev box only)** — the runtime cluster's last gate; never on shared CI.
 
 See `verification-before-completion` — run the verifying command in-turn before claiming success.

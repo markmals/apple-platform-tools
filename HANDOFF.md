@@ -28,7 +28,7 @@ The monorepo is assembled from existing, mostly-working code. Provenance and sta
 | `mac-dev-skills/src/tools/appkit-search` | `sdk-search` + `SDKIndex` (search half) | **Shipping.** Swift 6, 44 tests, BM25 + synonym pipeline, embedded 69-pattern HIG corpus. |
 | `PrivateHeaderKit` | `headerdump` + `BinaryFoundation` | **~90%.** Swift 6.2, ~5.8k LOC, 6 targets. Mach-O `__objc_*`/`__swift*` parsing via MachOKit family + live-runtime fallback; simulator + host dumping. |
 | `NSExceptional/re-cli` | `redump` (ported) | **Early** (2 commits). TypeScript wrapper over IDA/Hopper, JSON-for-LLM, universal binaries + dyld cache. To be ported to Swift on `BinaryFoundation`. |
-| `flexscope` (specs) | `flexscope` + `FlexScopeBoot` | **Specs only.** 72KB HANDOFF, 17 feature folders, domain models. No code. |
+| `flexscope` (specs) | `uitool` + `UIToolBoot` | **Specs only.** 72KB HANDOFF, 17 feature folders, domain models. No code. Absorbed as the `uitool` tool (renamed 2026-06-11). |
 | `markmals/FLEX` fork | `RuntimeKit` | **Working ObjC.** 379 files; the headless slice (~4.3k-line reflection core + `FLEXAppKitWalker`, already written in this fork) is what we extract. The iOS GUI is left behind. |
 
 The two `mac-dev-skills` tools and PrivateHeaderKit are real, tested code — the migration is refit-and-verify, not rewrite. flexscope is a complete design with no implementation. The FLEX fork already contains a headless macOS walker; the work is extraction, not authoring.
@@ -39,7 +39,7 @@ The two `mac-dev-skills` tools and PrivateHeaderKit are real, tested code — th
 
 Chosen over multi-package and over Tuist/Bazel. One `Package.swift` whose internal divide is by *target* — one executable per tool, library targets for the shared foundations. Rationale: one dependency graph, one `swift build`, atomic cross-cutting edits; the per-target boundary still gives each tool and library a clean home that honors the repo's "one responsibility per file" rule.
 
-**Accepted cost:** a single `swift-tools-version` and one platform floor. Mitigation: pin the floor at the common denominator, gate higher-OS features per-target with `@available`, and enforce hard runtime requirements (flexscope's Tahoe + arm64e + defanged machine) at runtime via `doctor` rather than in the manifest. arm64e flags / codesigning / injection are build-script concerns, never baked into a product.
+**Accepted cost:** a single `swift-tools-version` and one platform floor. Mitigation: pin the floor at the common denominator, gate higher-OS features per-target with `@available`, and enforce hard runtime requirements (uitool's Tahoe + arm64e + defanged machine) at runtime via `doctor` rather than in the manifest. arm64e flags / codesigning / injection are build-script concerns, never baked into a product.
 
 ### 4.2 Absorb, don't submodule (2026-06-11)
 
@@ -48,7 +48,7 @@ The four local projects move in as source; the monorepo becomes the single sourc
 ### 4.3 Three clusters over two foundations + a contract (2026-06-11)
 
 - **Static binary analysis** (`headerdump`, `redump`) over `BinaryFoundation`.
-- **Live runtime introspection** (`flexscope`) over `RuntimeKit` (+ `FlexScopeBoot`).
+- **Live runtime introspection** (`uitool`) over `RuntimeKit` (+ `UIToolBoot`).
 - **SDK knowledge** (`sdk-api`, `sdk-search`) over `SDKIndex`.
 
 All three over `AgentCLI`. Clusters are ordered by cost/danger — SDK knowledge is pure and offline; static analysis spawns subprocesses and reads binaries; runtime introspection injects into a live process on a defanged machine. Agents reach cheapest-first.
@@ -66,14 +66,14 @@ Phased so each phase ends green and the riskiest work (injection) is last.
 - **Phase 1 — topology + AgentCLI.** Author `Package.swift`'s target graph; build the `AgentCLI` contract library first (it's the through-line). Green build.
 - **Phase 1b — first slice.** Migrate `appkit-api` → `sdk-api` and `appkit-search` → `sdk-search` onto `AgentCLI`; factor their cores into `SDKIndex`. **Rename decided (2026-06-11):** generalize to `sdk-*` and update the `mac-dev-skills` skill wiring in the same pass. Tests green via `mise run test`.
 - **Phase 2 — static cluster.** Absorb PrivateHeaderKit → `headerdump`; factor Mach-O/dyld reading into `BinaryFoundation`. Then port re-cli → `redump` on that foundation, surfacing the IDA/Hopper dependency explicitly.
-- **Phase 3 — runtime cluster.** Extract the FLEX headless core → `RuntimeKit`; absorb flexscope's 17-feature spec layer; wire `flexscope` + `FlexScopeBoot` + FLEX-mac within the package; arm64e signing/injection via build script. Develop against the `SampleAppKit` oracle; first-party last.
+- **Phase 3 — runtime cluster.** Extract the FLEX headless core → `RuntimeKit`; absorb flexscope's 17-feature spec layer; wire `uitool` + `UIToolBoot` + FLEX-mac within the package; arm64e signing/injection via build script. Develop against the `SampleAppKit` oracle; first-party last.
 - **Future — iOS/Catalyst.** Rewrite FLEX's UIKit subsystems in Swift as a headless `RuntimeKit` capability; add `.iOS`/`.macCatalyst` to the package. Enables inspecting iOS apps and Mac Catalyst apps. *(user direction, 2026-06-11)*
 
 ## 6. Dual-use & safety posture
 
 These are reverse-engineering instruments used for legitimate Apple-platform development and research. The discipline that keeps them safe:
 
-- **Injection is defanged-machine-only.** `flexscope` needs SIP + AMFI + library-validation off — a system-wide regression, verified at runtime by `doctor`, on a machine holding no real data or credentials. Reversible from Recovery.
+- **Injection is defanged-machine-only.** `uitool` needs SIP + AMFI + library-validation off — a system-wide regression, verified at runtime by `doctor`, on a machine holding no real data or credentials. Reversible from Recovery.
 - **Containment is a mechanism.** The signed injectable dylib/framework are `.gitignore`d build outputs, never committed, never added to a shippable target or release CI job. A build/commit guard enforces it.
 - **Knowledge crosses into products; tools never do.** A font name, a constraint, a header signature, a disassembled routine leaves the repo and informs real work. The injection step does not.
 - **Licenses ride with the tools.** FLEX is BSD, dev-only (no App Store); `redump` inherits IDA/Hopper terms.

@@ -51,14 +51,14 @@ The **scope** names what the commit touches. Scoped Commits leaves the vocabular
 
 | Scope | Use for |
 | --- | --- |
-| a **spec / feature ID** — `command.sdk-api.check`, `domain.agent-cli`, `story.headerdump.dump-framework`, `error.flexscope.stale-node` | A change scoped to one spec's behavior. **The common case here.** The scope is a **reverse pointer to that `id:`** — same discipline as `// SPEC:`. |
-| a **tool or library target** — `sdk-api`, `sdk-search`, `headerdump`, `redump`, `flexscope`, `FlexScopeBoot` | A tool-level change not tied to one spec (a CLI-wide refactor, a manifest tweak). Derived from `Sources/`. Library targets are PascalCase (`AgentCLI`, `MachOFoundation`, …) and scopes are lowercase, so scope library changes by the library's `domain.*` spec ID (e.g. `domain.agent-cli`). |
+| a **spec / feature ID** — `command.sdk-api.check`, `domain.agent-cli`, `story.headerdump.dump-framework`, `error.uitool.stale-node` | A change scoped to one spec's behavior. **The common case here.** The scope is a **reverse pointer to that `id:`** — same discipline as `// SPEC:`. |
+| a **tool or library target** — `sdk-api`, `sdk-search`, `headerdump`, `redump`, `uitool`, `UIToolBoot` | A tool-level change not tied to one spec (a CLI-wide refactor, a manifest tweak). Derived from `Sources/`. Library targets are PascalCase (`AgentCLI`, `MachOFoundation`, …) and scopes are lowercase, so scope library changes by the library's `domain.*` spec ID (e.g. `domain.agent-cli`). |
 | `specs` | Cross-cutting spec files (`CONVENTIONS`, `ARCHITECTURE`, `STACK`, cross-cutting `models/`). |
 | `features/<tool>` | Authoring or extending a tool's feature namespace under `Features/<tool>/`. |
 | a harness area — `hooks`, `skills`, `commands`, `agents`, `templates`, `rules`, `docs`, `mise` | Changes to the harness's own machinery. |
 | `treewide` | A genuinely repo-wide sweep with no single home. |
 
-The IDs come straight from the `id:` frontmatter in `Specs/` and `Features/` — list them with `grep -rhE '^id:' Specs Features`. When a change spans more than one area, prefer the **broadest scope that still describes it**; only fall back to a comma-separated list (`command.sdk-api.check, command.sdk-api.members: …`) when no single scope fits, and to `treewide` for a true global sweep. A ticket number, when there is one, goes in parentheses after the scope: `flexscope (PROJ-12): …`.
+The IDs come straight from the `id:` frontmatter in `Specs/` and `Features/` — list them with `grep -rhE '^id:' Specs Features`. When a change spans more than one area, prefer the **broadest scope that still describes it**; only fall back to a comma-separated list (`command.sdk-api.check, command.sdk-api.members: …`) when no single scope fits, and to `treewide` for a true global sweep. A ticket number, when there is one, goes in parentheses after the scope: `uitool (PROJ-12): …`.
 
 Examples:
 

@@ -75,7 +75,7 @@ public enum TypeEncoding: Character, Sendable, CaseIterable {
 // SPEC: domain.runtime.type-encoding
 /// Sizing constants the parser leans on, named rather than hard-coded so the
 /// 64-bit assumptions (pointers, `id`, `Class`, `SEL` are all 8 bytes) read as
-/// a deliberate contract. flexscope is arm64/x86_64-only, matching FLEX's
+/// a deliberate contract. uitool is arm64/x86_64-only, matching FLEX's
 /// `sizeof(uintptr_t)` / `sizeof(id)` on the host.
 public enum TypeEncodingSizes {
   /// The width of any pointer-shaped value: raw pointers, `id`, `Class`, `SEL`,
