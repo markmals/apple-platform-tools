@@ -128,5 +128,16 @@ let package = Package(
     // runtime / AppKit wrappers and the RuntimeKitC native floor follow.
     .target(name: "RuntimeKit"),
     .testTarget(name: "RuntimeKitTests", dependencies: ["RuntimeKit", "TestSupport"]),
+
+    // UIToolCore: the pure projection core for the live-runtime inspector —
+    // node model, node-id grammar, Swift-Regex selector + predicate language,
+    // tree/find/windows/node projection, JSON-Lines + exit-code contract. Pure
+    // over RuntimeKit's snapshots; the injected server (UIToolServer) and boot
+    // (UIToolBoot) are the deferred effectful half.
+    .target(name: "UIToolCore", dependencies: ["AgentCLI", "RuntimeKit"]),
+    .testTarget(
+      name: "UIToolCoreTests",
+      dependencies: ["UIToolCore", "RuntimeKit", "TestSupport"]
+    ),
   ]
 )
