@@ -141,6 +141,23 @@ let package = Package(
       dependencies: ["UIToolCore", "RuntimeKit", "TestSupport"]
     ),
 
+    // SampleAppKit: the known-geometry oracle the live-runtime cluster is verified
+    // against — a tiny AppKit scene with a pinned layout. A test-support target
+    // (NOT a product, never shipped); later the basis of the launchable injection
+    // harness. Built only when a test depends on it.
+    .target(name: "SampleAppKit"),
+
+    // UIToolServer: the injected in-target server. The dumb forest-shipping
+    // bridge — every read op snapshots the live window forest to the requested
+    // depth and ships a Capture (domain.uitool.server); the CLI does all
+    // navigation/matching over it. The socket transport and the UIToolBoot dylib
+    // are the next slices of the injection half.
+    .target(name: "UIToolServer", dependencies: ["AgentCLI", "UIToolCore", "RuntimeKit"]),
+    .testTarget(
+      name: "UIToolServerTests",
+      dependencies: ["UIToolServer", "UIToolCore", "RuntimeKit", "SampleAppKit", "TestSupport"]
+    ),
+
     // uitool: the agent-first CLI over UIToolCore. doctor / list-apps are real
     // local system reads; the read verbs (windows/tree/find/node) run over a
     // SnapshotSource — a captured [WindowSnapshot] now, the injected UIToolServer
