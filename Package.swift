@@ -15,6 +15,10 @@ let package = Package(
     .executable(name: "redump", targets: ["redump"]),
     .library(name: "RuntimeKit", targets: ["RuntimeKit"]),
     .executable(name: "uitool", targets: ["uitool"]),
+    // The injected boot dylib — DYLD_INSERTed (launch) or remote-dlopened (attach)
+    // into a get-task-allow target. A dynamic library so it can be loaded into a
+    // foreign process. The signed artifact is git-ignored, dev-box only.
+    .library(name: "UIToolBoot", type: .dynamic, targets: ["UIToolBoot", "UIToolBootCtor"]),
   ],
   dependencies: [
     .package(url: "https://github.com/apple/swift-argument-parser", from: "1.5.0"),
@@ -142,10 +146,20 @@ let package = Package(
     ),
 
     // SampleAppKit: the known-geometry oracle the live-runtime cluster is verified
-    // against — a tiny AppKit scene with a pinned layout. A test-support target
-    // (NOT a product, never shipped); later the basis of the launchable injection
-    // harness. Built only when a test depends on it.
+    // against — a tiny AppKit scene with a pinned layout. The library is depended
+    // on by UIToolServerTests; SampleAppKitApp wraps it in a real NSApplication as
+    // the cooperative injection target for `uitool launch` / `attach`.
     .target(name: "SampleAppKit"),
+    .executableTarget(name: "SampleAppKitApp", dependencies: ["SampleAppKit"]),
+
+    // UIToolBoot: the injected boot dylib. An ObjC +load shim (UIToolBootCtor)
+    // calls the Swift entry on image load, which starts UIToolServer. Built as a
+    // dynamic library (the .library product above) so it can be DYLD_INSERTed or
+    // remote-dlopened into a foreign process. The signed dylib is git-ignored.
+    .target(name: "UIToolBootCtor"),
+    .target(
+      name: "UIToolBoot",
+      dependencies: ["UIToolServer", "UIToolIPC", "UIToolCore", "UIToolBootCtor"]),
 
     // UIToolIPC: the effectful socket transport shared by both ends — the POSIX
     // unix-domain-socket primitives, the newline framing, and the CLI's IPCClient.
