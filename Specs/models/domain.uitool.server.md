@@ -38,39 +38,45 @@ job in `UIToolCore` — the server ships *raw* snapshots and lets the pure core
 shape them. This keeps the code that runs in a foreign process as small and as
 dumb as possible: read on main, serialize off main, send.
 
-## The op → walker bridge
+## The op → forest snapshot (v1: one read op + ping)
 
-Each cheap-read `op` ([[domain.uitool.ipc]] operations) maps to exactly one
-[[domain.runtime.walker]] entry point, and the result is wrapped in a `Capture`
-(`{epoch, windows}`) — the same envelope the offline source decodes from disk.
+The server is deliberately **dumb**. Every cheap-read `op` ([[domain.uitool.ipc]]
+operations) maps to the **same** walker call —
+`snapshotApplicationWindows(maxDepth:)` — and the result is wrapped in a `Capture`
+(`{epoch, windows}`), the same envelope the offline source decodes from disk. The
+**CLI** then does all root-selection, navigation, selector matching, field
+projection, depth pruning, and staleness over that `Capture` using the existing
+pure verbs ([[domain.uitool.node]], [[domain.uitool.selector]]) — exactly as the
+offline `--snapshot` path already does. This is the literal form of the "server
+holds no policy" invariant: the server ships a depth-bounded forest; the pure core
+shapes it.
 
-| `op` | Walker call | `data` payload |
+| `op` | Server does | `data` payload |
 | --- | --- | --- |
-| `windows` | `snapshotApplicationWindows(maxDepth:)` | `Capture` whose `windows` is the full forest at the requested depth |
-| `hierarchy` | resolve `window`/`node` to a root, then `snapshot(view:inWindow:maxDepth:)` | `Capture` whose `windows` holds the one requested root subtree |
-| `hierarchy` (maxDepth 0) | resolve the node, snapshot it childless | `Capture` with the single node, no descendants — backs the `node` verb |
-| `find` | `snapshotApplicationWindows(maxDepth:)`, then stream | the matching nodes (selector matching stays CLI-side; see Notes) |
+| `windows` / `hierarchy` / `find` | `snapshotApplicationWindows(maxDepth:)` | `Capture` whose `windows` is the forest at the requested depth |
 | `ping` | none | the handshake object: `schemaVersion` and the session `epoch` |
 
-The server **never** re-implements the read. The walker already exists, is
-`@MainActor`, and is unit-tested on a stock Mac with no injection
-([[domain.runtime.walker]]); the server's only addition is *resolving a request
-to a starting view* (a window index or a node-id structural path) before calling
-the walker, and *marshaling that call onto the main thread*.
+The `maxDepth` is **computed CLI-side per verb** and sent on the request, so the
+forest is bounded to what the verb needs: `windows` sends a shallow depth, `tree`
+sends `pathDepth(root) + requestedDepth`, `node` sends `pathDepth(root)`, `find`
+sends a deep walk (it must search the whole tree). The server never inspects which
+verb is behind the request — it honors the `maxDepth` it is given. The walker
+already exists, is `@MainActor`, and is unit-tested on a stock Mac with no
+injection ([[domain.runtime.walker]]); the server's only additions are honoring
+`maxDepth` and marshaling the call onto the main thread. One code path serves all
+four read verbs.
 
-### Resolving a node-id to a live view
+### Node-id resolution and staleness are CLI-side in v1
 
-A `hierarchy`/`node` request that names a node-id carries its `structuralPath`
-([[domain.uitool.node-id]]). The server re-walks that path from the window root in
-the **live** tree:
-
-- Path resolves and the node's runtime class still matches the recorded class
-  echo → snapshot from there.
-- Path no longer resolves, **or** the class echo mismatches → `STALE_NODE`
-  (exit 5). v1 staleness is **structural path + class echo only**
-  ([[domain.uitool.node-id]] — "v1 anchors stability on the structural path + a
-  `class` echo only"); the pointer-validity deref is part of the deferred
-  value-fetching verbs, not the cheap-read path.
+A `tree`/`node` request names a node-id; the **CLI** resolves its `structuralPath`
+and validates the class echo over the returned `Capture` using the same
+`NodeTree` / staleness logic the offline path uses — re-walk the path, compare the
+recorded class, raise `STALE_NODE` (exit 5) on a mismatch ([[domain.uitool.node-id]]
+— "v1 anchors stability on the structural path + a `class` echo only"). The server
+does **not** resolve node-ids in v1; pushing resolution server-side (to ship only
+a subtree instead of a bounded forest) is a deliberate later optimization (see
+Notes), not a v1 concern. The pointer-validity deref is part of the deferred
+value-fetching verbs, not the cheap-read path.
 
 ## Threading (the load-bearing rule)
 
@@ -95,17 +101,20 @@ the server unit that must enforce them.
 The server only ever emits codes from the closed [[domain.uitool.ipc]]
 vocabulary; it never invents a code or leaks a stack trace.
 
-| Condition | Wire `error.code` | Exit |
-| --- | --- | --- |
-| node-id path/class echo fails re-validation | `STALE_NODE` | 5 |
-| main-thread hop (or socket read) exceeds its bound | `TIMEOUT` | 7 |
-| `op` unknown / `v` mismatch | schema/usage per [[domain.uitool.ipc]] | 8 / 2 |
-| requested window/root absent for a verb that needs one | surfaces as the verb's empty result, `NO_WINDOWS` on stderr's object, **exit 0** | 0 |
+| Condition | Wire `error.code` | Exit | Raised by |
+| --- | --- | --- | --- |
+| main-thread hop (or socket read) exceeds its bound | `TIMEOUT` | 7 | **server** |
+| `op` unknown / `v` mismatch | schema/usage per [[domain.uitool.ipc]] | 8 / 2 | **server** |
+| node-id path/class echo fails re-validation | `STALE_NODE` | 5 | **CLI** (over the returned `Capture`) |
+| requested window/root absent, or a 0-match read | `NO_WINDOWS` on stderr; **exit 0** | 0 | **CLI** |
 
-Selector/projection errors (`BAD_SELECTOR`, `UNKNOWN_FIELD`, `BAD_PREDICATE`) are
-raised **CLI-side** before a request is ever sent — the matcher and field
-projection are pure `UIToolCore` ([[domain.uitool.selector]], [[domain.uitool.node]]) —
-so the server does not produce them.
+The server emits only `TIMEOUT` and the schema/usage codes. Staleness
+(`STALE_NODE`), empty-result handling (`NO_WINDOWS`), and selector/projection
+errors (`BAD_SELECTOR`, `UNKNOWN_FIELD`, `BAD_PREDICATE`) are all raised
+**CLI-side** over the returned `Capture` — the matcher, field projection, and
+node-id validation are pure `UIToolCore` ([[domain.uitool.selector]],
+[[domain.uitool.node]], [[domain.uitool.node-id]]) — so the server never produces
+them.
 
 ## Determinism boundary
 
@@ -171,14 +180,21 @@ node-id stringification over the decoded `Capture`. Two consequences pinned here
 
 ## Notes
 
-- **Why selector matching stays CLI-side for `find`.** The matcher is a pure
-  `Swift Regex`/predicate engine ([[domain.uitool.selector]]) that the offline
-  path already runs over a `Capture`. Running it in the foreign process would
-  duplicate it across the purity boundary for no gain and would put a
-  user-supplied regex inside someone else's address space. The server streams the
-  window forest (depth-bounded); the CLI matches. If a future profiling pass shows
-  the forest is too large to ship for `find`, pushing a compiled matcher
-  server-side is a deliberate later optimization, not a v1 concern. *(deviation
+- **Why all navigation, matching, and resolution stay CLI-side.** The matcher,
+  the node-id path resolver, and the field projection are pure `UIToolCore`
+  ([[domain.uitool.selector]], [[domain.uitool.node-id]], [[domain.uitool.node]])
+  that the offline `--snapshot` path already runs over a `Capture`. Re-running any
+  of them in the foreign process would duplicate tested logic across the purity
+  boundary for no gain and would put user-supplied regexes/paths inside someone
+  else's address space. The server ships a depth-bounded forest; the CLI does the
+  rest. This is why one server code path serves all four read verbs.
+- **The deferred optimization: server-side subtree resolution.** v1 ships a
+  depth-bounded *forest* per read, so a deep `tree`/`node` request transfers more
+  than the requested subtree. If a profiling pass shows that is too costly for a
+  large target, pushing node-id resolution server-side — so the server walks to
+  the requested path and snapshots only that subtree — is the deliberate later
+  optimization. It is **not** a v1 concern (research targets are small), and
+  taking it must keep the determinism + staleness contract identical. *(deviation
   candidate — record it on the impl if taken.)*
 - **The server is tiny on purpose.** Everything hard about `uitool` (the grammar,
   the projection, the determinism, the ranking) lives in the pure core that runs
