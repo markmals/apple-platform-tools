@@ -1,3 +1,4 @@
+import AgentCLI
 import Foundation
 import UIToolCore
 import UIToolIPC
@@ -56,6 +57,14 @@ public final class SocketServer: @unchecked Sendable {
     while let lineData = connection.readLine() {
       guard let request = try? JSONDecoder().decode(WireRequest.self, from: lineData) else {
         continue
+      }
+      // `detach` is a transport-lifecycle op, not a read: acknowledge it, then
+      // close + unlink the socket so a later read refuses with NOT_ATTACHED.
+      if request.op == "detach" {
+        let ack = WireResponse<DetachAck>.success(id: request.id, DetachAck(closed: true))
+        try? connection.write(line: (try? Output.line(ack)) ?? "")
+        stop()
+        return
       }
       try? connection.write(line: handler(request))
     }

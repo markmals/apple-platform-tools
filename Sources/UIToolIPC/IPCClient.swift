@@ -55,6 +55,14 @@ public final class IPCClient {
     return capture
   }
 
+  /// Tell the server to close and unlink its socket ([[command.uitool.detach]]).
+  /// Returns whether it acknowledged closing.
+  @discardableResult
+  public func detach() throws -> Bool {
+    let response: WireResponse<DetachAck> = try roundTrip(op: "detach", maxDepth: nil)
+    return response.ok && (response.data?.closed ?? false)
+  }
+
   /// Send one request, read one response line, decode it as the expected payload.
   /// A connection that closes before answering is `TIMEOUT` (the socket opened but
   /// the target never replied).

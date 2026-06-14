@@ -53,16 +53,18 @@ struct SessionSnapshotSource: SnapshotSource {
     return try client.fetchCapture()
   }
 
-  /// Resolve `<app>` (a pid or a bundle id) to its `/tmp/uitool-<pid>.sock` path.
-  /// A bundle id with no running instance has no session, so it is `NOT_ATTACHED`.
+  /// Resolve `<app>` (a pid or a bundle id) to a running pid, or `nil` when no
+  /// instance is running.
+  static func resolvePID(for app: String) -> pid_t? {
+    if let pid = Int32(app) { return pid }
+    return NSRunningApplication.runningApplications(withBundleIdentifier: app)
+      .first?.processIdentifier
+  }
+
+  /// Resolve `<app>` to its `/tmp/uitool-<pid>.sock` path. A bundle id with no
+  /// running instance has no session, so it is `NOT_ATTACHED`.
   static func socketPath(for app: String) throws -> String {
-    if let pid = Int32(app) {
-      return UnixSocket.path(forPID: pid)
-    }
-    let running = NSRunningApplication.runningApplications(withBundleIdentifier: app)
-    guard let pid = running.first?.processIdentifier else {
-      throw UIToolError.notAttached
-    }
+    guard let pid = resolvePID(for: app) else { throw UIToolError.notAttached }
     return UnixSocket.path(forPID: pid)
   }
 }

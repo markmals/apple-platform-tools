@@ -139,14 +139,25 @@ struct AttachGateTests {
     #expect(UIToolError.notAttached.exitCode == 4)
   }
 
-  @Test(.serialized)
-  func `the built uitool binary exits non-zero on attach and detach`() throws {
+  @Test
+  func `the built uitool binary gates reads and resolves launch errors`() throws {
     guard let binary = builtUIToolBinary() else { return }
-    for verb in ["attach", "detach"] {
-      let (status, stderr) = try runUITool(binary, [verb, "com.apple.mail"])
-      #expect(status == 4)
-      #expect(stderr.contains("NOT_ATTACHED"))
-    }
+
+    // A read against a pid with no live session refuses with NOT_ATTACHED (exit 4)
+    // — the socket simply isn't there to connect to.
+    let (readStatus, readErr) = try runUITool(binary, ["windows", "999999"])
+    #expect(readStatus == 4)
+    #expect(readErr.contains("NOT_ATTACHED"))
+
+    // detach is idempotent: nothing is attached at that pid, so it is a clean no-op.
+    let (detachStatus, _) = try runUITool(binary, ["detach", "999999"])
+    #expect(detachStatus == 0)
+
+    // launch with no resolvable app is APP_NOT_FOUND (exit 3), raised before any
+    // dylib lookup or spawn.
+    let (launchStatus, launchErr) = try runUITool(binary, ["launch", "/no/such/app.app"])
+    #expect(launchStatus == 3)
+    #expect(launchErr.contains("APP_NOT_FOUND"))
   }
 }
 

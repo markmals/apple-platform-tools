@@ -47,6 +47,18 @@ public struct Ping: Codable, Equatable, Sendable {
 }
 
 // SPEC: domain.uitool.ipc
+/// The `detach` acknowledgement: the server confirms it is closing and unlinking
+/// its socket ([[command.uitool.detach]]). After this the session is gone, so a
+/// later read refuses with `NOT_ATTACHED`.
+public struct DetachAck: Codable, Equatable, Sendable {
+  public let closed: Bool
+
+  public init(closed: Bool) {
+    self.closed = closed
+  }
+}
+
+// SPEC: domain.uitool.ipc
 /// A wire error object: a code from the closed [[domain.uitool.ipc]] vocabulary, a
 /// one-line message, and a one-line recovery hint — never a stack trace.
 public struct WireError: Codable, Equatable, Sendable {
