@@ -7,7 +7,7 @@ import Foundation
 /// `Codable` so it round-trips through the AgentCLI `Output` encoder (sorted keys,
 /// unescaped slashes); numbers are carried raw because the node already rounded its
 /// floats to 1 dp before this layer ever sees them.
-enum JSONValue: Codable, Equatable {
+public enum JSONValue: Codable, Equatable, Sendable {
   case null
   case bool(Bool)
   case number(Double)
@@ -15,7 +15,7 @@ enum JSONValue: Codable, Equatable {
   case array([JSONValue])
   case object([String: JSONValue])
 
-  init(from decoder: Decoder) throws {
+  public init(from decoder: Decoder) throws {
     let container = try decoder.singleValueContainer()
     if container.decodeNil() {
       self = .null
@@ -32,7 +32,7 @@ enum JSONValue: Codable, Equatable {
     }
   }
 
-  func encode(to encoder: Encoder) throws {
+  public func encode(to encoder: Encoder) throws {
     var container = encoder.singleValueContainer()
     switch self {
     case .null: try container.encodeNil()
