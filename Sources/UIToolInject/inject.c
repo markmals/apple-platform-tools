@@ -77,6 +77,9 @@ int uitool_inject(int pid, const char *dylib_path) {
 
   const uint64_t thunk_addr = base + thunk_off;
   const uint64_t path_addr = base + path_off;
+  const uint64_t sym_off = 0x600;
+  const uint64_t sym_addr = base + sym_off;
+  static const char boot_symbol[] = "uitool_boot_start";
 
   // mach blob @ 0: pthread_create_from_mach_thread(&pt, NULL, thunk, path); spin.
   uint32_t *m = (uint32_t *)buffer;
@@ -89,17 +92,26 @@ int uitool_inject(int pid, const char *dylib_path) {
   m[i++] = 0xD63F0200u;  // blr x16
   m[i++] = 0x14000000u;  // b .  (spin until the caller terminates this thread)
 
-  // thunk @ thunk_off: prologue; dlopen(path, RTLD_NOW); epilogue; ret.
+  // thunk @ thunk_off (the pthread start routine): dlopen the dylib, then dlsym +
+  // call uitool_boot_start. The explicit call is what makes re-attach work — on an
+  // already-resident dylib dlopen does NOT refire +load, so we start the server
+  // directly. RTLD_DEFAULT (-2) finds the symbol regardless of the dlopen handle.
   uint32_t *t = (uint32_t *)(buffer + thunk_off);
   int j = 0;
-  t[j++] = 0xA9BF7BFDu;                     // stp x29, x30, [sp, #-16]!
-  t[j++] = 0xD2800041u;                     // movz x1, #2  (RTLD_NOW)
+  t[j++] = 0xA9BF7BFDu;                      // stp x29, x30, [sp, #-16]!
+  t[j++] = 0xD2800041u;                      // movz x1, #2  (RTLD_NOW)
   j += emit_load_imm64(t + j, 16, (uint64_t)&dlopen);
-  t[j++] = 0xD63F0200u;                     // blr x16
-  t[j++] = 0xA8C17BFDu;                     // ldp x29, x30, [sp], #16
-  t[j++] = 0xD65F03C0u;                     // ret
+  t[j++] = 0xD63F0200u;                      // blr x16   ; dlopen(path, RTLD_NOW)
+  t[j++] = 0x92800020u;                      // movn x0, #1  -> x0 = RTLD_DEFAULT (-2)
+  j += emit_load_imm64(t + j, 1, sym_addr);  // x1 = "uitool_boot_start"
+  j += emit_load_imm64(t + j, 16, (uint64_t)&dlsym);
+  t[j++] = 0xD63F0200u;                      // blr x16   ; dlsym(RTLD_DEFAULT, name) -> x0
+  t[j++] = 0xD63F0000u;                      // blr x0    ; uitool_boot_start()
+  t[j++] = 0xA8C17BFDu;                      // ldp x29, x30, [sp], #16
+  t[j++] = 0xD65F03C0u;                      // ret
 
   memcpy(buffer + path_off, dylib_path, path_len);
+  memcpy(buffer + sym_off, boot_symbol, sizeof(boot_symbol));
 
   if (mach_vm_write(task, base, (vm_offset_t)buffer, (mach_msg_type_number_t)region_size)
       != KERN_SUCCESS) {

@@ -17,11 +17,14 @@ import UIToolServer
 /// `INJECTION_FAILED`.
 @_cdecl("uitool_boot_start")
 public func uitool_boot_start() {
-  // Idempotent: a second load (re-inject into an already-served target) reuses the
-  // running server rather than binding a second socket.
-  guard bootServer == nil else { return }
-
   let path = UnixSocket.path(forPID: getpid())
+
+  // Key on the socket's presence, not a one-shot flag: reuse an active session, but
+  // restart after a `detach` unlinked the socket. This is what makes re-attach
+  // work — `+load` fires once per image load, but the injector calls this again on
+  // re-attach, when the prior server has been torn down.
+  guard !FileManager.default.fileExists(atPath: path) else { return }
+
   // Each boot is one session. A wall-clock epoch differs across re-injections, so
   // handles minted in a prior (detached, re-injected) session read as stale.
   let epoch = Int(Date().timeIntervalSince1970)
