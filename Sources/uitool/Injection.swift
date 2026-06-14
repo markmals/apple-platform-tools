@@ -4,6 +4,7 @@ import Darwin
 import Foundation
 import UIToolCore
 import UIToolIPC
+import UIToolInject
 
 // SPEC: domain.uitool.injection
 /// Where the CLI finds the boot dylib to inject. An explicit `UITOOL_BOOT_DYLIB`
@@ -175,6 +176,55 @@ enum Injection {
       pid: session.pid, bundleId: resolved.bundleId, path: session.path,
       replaced: session.replaced, reused: session.reused, epoch: session.epoch)
     return session
+  }
+
+  /// Attach to an already-running target, preserving its live state — acquire its
+  /// task port and remote-`dlopen` the boot dylib (the cooperative attach-to-running
+  /// path, [[domain.uitool.injection]]). Needs `uitool` signed with the debugger
+  /// entitlement; no machine defang.
+  static func attach(target: String) throws -> Session {
+    guard let pid = SessionSnapshotSource.resolvePID(for: target), processIsAlive(pid) else {
+      throw UIToolError.appNotRunning("no running process for \(target)")
+    }
+    let bundleId = Int32(target) == nil ? target : nil
+    let socketPath = UnixSocket.path(forPID: pid)
+
+    // Idempotent: a target already serving from this session is reused, not
+    // re-injected ([[command.uitool.attach]] lifecycle).
+    if let client = try? IPCClient.connect(socketPath: socketPath) {
+      defer { client.close() }
+      if let ping = try? client.handshake() {
+        return Session(
+          pid: pid, bundleId: bundleId, path: "running", replaced: false, reused: true,
+          epoch: ping.epoch)
+      }
+    }
+
+    let dylib = try BootDylib.require()
+    let stage = uitool_inject(pid, dylib)
+    guard stage == 0 else { throw injectError(stage) }
+    let session = try openSession(pid: pid, path: "running", replaced: false)
+    return Session(
+      pid: pid, bundleId: bundleId, path: "running", replaced: false, reused: false,
+      epoch: session.epoch)
+  }
+
+  private static func processIsAlive(_ pid: pid_t) -> Bool {
+    kill(pid, 0) == 0
+  }
+
+  /// Map a non-zero `uitool_inject` stage code to the closed error vocabulary. A
+  /// denied `task_for_pid` is a precondition (the missing entitlement, exit 6);
+  /// every other stage is an injection failure (exit 4).
+  private static func injectError(_ stage: Int32) -> UIToolError {
+    switch stage {
+    case 1:
+      return .preconditionFailed(
+        "task_for_pid denied — sign uitool with com.apple.security.cs.debugger "
+          + "(or run as root); see docs/uitool-dev-setup.md")
+    default:
+      return .injectionFailed("remote injection failed at stage \(stage)")
+    }
   }
 
   /// For a bundle target already running: refuse without `--replace`, else

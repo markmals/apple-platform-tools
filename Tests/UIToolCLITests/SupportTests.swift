@@ -110,16 +110,24 @@ struct ListAppsTests {
   }
 }
 
-// MARK: - attach / detach (gated, honest NOT_ATTACHED)
+// MARK: - attach / launch / detach surfaces
 
 @Suite(.spec("command.uitool.attach"))
 struct AttachGateTests {
   @Test
   func `the attach surface parses its target and flags`() throws {
-    let attach = try Attach.parse(["com.apple.mail", "--relaunch", "--no-meta"])
+    let attach = try Attach.parse(["com.apple.mail", "--no-meta", "--pretty"])
     #expect(attach.app == "com.apple.mail")
-    #expect(attach.relaunch)
     #expect(attach.noMeta)
+    #expect(attach.pretty)
+  }
+
+  @Test
+  func `the launch surface parses its target, replace, and passthrough args`() throws {
+    let launch = try Launch.parse(["com.example.App", "--replace", "--", "--flag", "value"])
+    #expect(launch.app == "com.example.App")
+    #expect(launch.replace)
+    #expect(launch.appArgs == ["--flag", "value"])
   }
 
   @Test

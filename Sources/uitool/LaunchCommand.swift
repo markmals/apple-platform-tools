@@ -30,7 +30,7 @@ struct Launch: ParsableCommand {
   var noMeta = false
 
   @Argument(
-    parsing: .captureForPassthrough, help: "Arguments passed to the launched app after --.")
+    parsing: .postTerminator, help: "Arguments passed to the launched app, after a -- terminator.")
   var appArgs: [String] = []
 
   func run() throws {

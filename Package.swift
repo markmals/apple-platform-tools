@@ -185,12 +185,17 @@ let package = Package(
     // local system reads; the read verbs (windows/tree/find/node) run over a
     // SnapshotSource — a captured [WindowSnapshot] now, the injected UIToolServer
     // later. attach/detach + the live session source are the deferred injection half.
+    // UIToolInject: the C mach injector for attach-to-running — task_for_pid +
+    // remote-thread dlopen of the boot dylib into an already-running target.
+    // Kept in C (thread state + shellcode); the CLI calls uitool_inject.
+    .target(name: "UIToolInject"),
     .executableTarget(
       name: "uitool",
       dependencies: [
         "AgentCLI",
         "UIToolCore",
         "UIToolIPC",
+        "UIToolInject",
         "RuntimeKit",
         .product(name: "ArgumentParser", package: "swift-argument-parser"),
         .product(name: "Subprocess", package: "swift-subprocess"),
