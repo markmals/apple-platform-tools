@@ -147,15 +147,24 @@ let package = Package(
     // harness. Built only when a test depends on it.
     .target(name: "SampleAppKit"),
 
+    // UIToolIPC: the effectful socket transport shared by both ends — the POSIX
+    // unix-domain-socket primitives, the newline framing, and the CLI's IPCClient.
+    // Kept out of the pure UIToolCore; used by UIToolServer (the accept loop) and
+    // uitool (the client).
+    .target(name: "UIToolIPC", dependencies: ["AgentCLI", "UIToolCore"]),
+
     // UIToolServer: the injected in-target server. The dumb forest-shipping
     // bridge — every read op snapshots the live window forest to the requested
     // depth and ships a Capture (domain.uitool.server); the CLI does all
-    // navigation/matching over it. The socket transport and the UIToolBoot dylib
-    // are the next slices of the injection half.
-    .target(name: "UIToolServer", dependencies: ["AgentCLI", "UIToolCore", "RuntimeKit"]),
+    // navigation/matching over it. SocketServer is the accept loop; the bounded
+    // main-thread hop bridges to the AppKit reads. The UIToolBoot dylib is next.
+    .target(
+      name: "UIToolServer", dependencies: ["AgentCLI", "UIToolCore", "RuntimeKit", "UIToolIPC"]),
     .testTarget(
       name: "UIToolServerTests",
-      dependencies: ["UIToolServer", "UIToolCore", "RuntimeKit", "SampleAppKit", "TestSupport"]
+      dependencies: [
+        "UIToolServer", "UIToolIPC", "UIToolCore", "RuntimeKit", "SampleAppKit", "TestSupport",
+      ]
     ),
 
     // uitool: the agent-first CLI over UIToolCore. doctor / list-apps are real
@@ -167,6 +176,7 @@ let package = Package(
       dependencies: [
         "AgentCLI",
         "UIToolCore",
+        "UIToolIPC",
         "RuntimeKit",
         .product(name: "ArgumentParser", package: "swift-argument-parser"),
         .product(name: "Subprocess", package: "swift-subprocess"),
@@ -174,7 +184,19 @@ let package = Package(
     ),
     .testTarget(
       name: "UIToolCLITests",
-      dependencies: ["uitool", "UIToolCore", "RuntimeKit", "TestSupport"]
+      dependencies: ["uitool", "UIToolCore", "UIToolIPC", "RuntimeKit", "TestSupport"]
+    ),
+
+    // UIToolIPCTests: the socket transport end-to-end over a loopback — the
+    // SocketServer accept loop + IPCClient round-trip, the schema handshake, and
+    // the full live read against the SampleAppKit oracle through makeBoundedHandler.
+    // All on a stock Mac, no injection.
+    .testTarget(
+      name: "UIToolIPCTests",
+      dependencies: [
+        "UIToolIPC", "UIToolServer", "UIToolCore", "RuntimeKit", "SampleAppKit", "AgentCLI",
+        "TestSupport",
+      ]
     ),
   ]
 )

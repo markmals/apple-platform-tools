@@ -1,0 +1,70 @@
+import AgentCLI
+import Foundation
+import UIToolCore
+
+// SPEC: domain.uitool.ipc
+/// The CLI's end of the IPC socket: connect to a session's
+/// `/tmp/uitool-<pid>.sock`, perform the `ping` handshake (rejecting a schema
+/// skew), and fetch the window-forest `Capture` the pure verbs run over. Effectful
+/// — the policy stays in `UIToolCore`. Failures map to the closed `UIToolError`
+/// vocabulary: a refused connect is `NOT_ATTACHED` (exit 4), a missing/garbled
+/// response is `TIMEOUT` (exit 7), a version skew is `SCHEMA_MISMATCH` (exit 8).
+public final class IPCClient {
+  private let connection: LineConnection
+  private var nextID = 1
+
+  private init(connection: LineConnection) { self.connection = connection }
+
+  /// Connect to the session socket. A refused connect — no listener, i.e. no live
+  /// session — is `NOT_ATTACHED`, never a crash.
+  public static func connect(socketPath: String) throws -> IPCClient {
+    do {
+      let fd = try UnixSocket.connect(path: socketPath)
+      return IPCClient(connection: LineConnection(fd: fd))
+    } catch {
+      throw UIToolError.notAttached
+    }
+  }
+
+  public func close() { UnixSocket.close(connection.fd) }
+
+  /// The `ping` handshake; throws `SCHEMA_MISMATCH` when the server's schema
+  /// version differs from the CLI's (the check that keeps the separately-built CLI
+  /// and dylib from desyncing — [[domain.uitool.ipc]]).
+  @discardableResult
+  public func handshake() throws -> Ping {
+    let response: WireResponse<Ping> = try roundTrip(op: "ping", maxDepth: nil)
+    guard response.ok, let ping = response.data else {
+      if let error = response.error { throw UIToolError.from(wire: error) }
+      throw UIToolError.notAttached
+    }
+    guard ping.schemaVersion == Schema.version else {
+      throw UIToolError.schemaMismatch(
+        "CLI expects \"\(Schema.version)\", server reports \"\(ping.schemaVersion)\"")
+    }
+    return ping
+  }
+
+  /// Fetch the live window forest as a `Capture`. `maxDepth` nil fetches the full
+  /// forest; the CLI's verbs navigate and prune over it (the dumb-server design,
+  /// [[domain.uitool.server]]).
+  public func fetchCapture(op: String = "windows", maxDepth: Int? = nil) throws -> Capture {
+    let response: WireResponse<Capture> = try roundTrip(op: op, maxDepth: maxDepth)
+    if let error = response.error { throw UIToolError.from(wire: error) }
+    guard response.ok, let capture = response.data else { throw UIToolError.timeout }
+    return capture
+  }
+
+  /// Send one request, read one response line, decode it as the expected payload.
+  /// A connection that closes before answering is `TIMEOUT` (the socket opened but
+  /// the target never replied).
+  private func roundTrip<P: Decodable & Sendable>(op: String, maxDepth: Int?) throws
+    -> WireResponse<P>
+  {
+    let request = WireRequest(id: nextID, op: op, maxDepth: maxDepth)
+    nextID += 1
+    try connection.write(line: Output.line(request))
+    guard let data = connection.readLine() else { throw UIToolError.timeout }
+    return try JSONDecoder().decode(WireResponse<P>.self, from: data)
+  }
+}

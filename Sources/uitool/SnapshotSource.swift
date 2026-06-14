@@ -1,5 +1,7 @@
+import AppKit
 import Foundation
 import UIToolCore
+import UIToolIPC
 
 // SPEC: domain.uitool.ipc
 /// Where a read verb gets its window forest. The MVP source is **offline** — a
@@ -33,17 +35,35 @@ struct FileSnapshotSource: SnapshotSource {
   }
 }
 
-// SPEC: domain.uitool.injection
-/// The live source — the deferred injected-server client. Constructing it is fine
-/// (a verb resolves it before knowing whether a session exists); using it is what
-/// is gated: `load()` throws `NOT_ATTACHED` (exit 4) because the injection half
-/// (`UIToolServer` / `UIToolBoot`) that would answer over the socket is not yet
-/// built. The error is clean and branchable, never a fake snapshot or a crash.
+// SPEC: domain.uitool.ipc
+/// The live source: connect to the target's session socket, perform the `ping`
+/// handshake (rejecting a schema skew, exit 8), and fetch the window-forest
+/// `Capture` the read verbs run over — the dumb-server design, so the same verbs
+/// that drive the offline `--snapshot` source drive the live one
+/// ([[domain.uitool.server]]). A target with no live session (the socket refuses)
+/// surfaces as `NOT_ATTACHED` (exit 4), never a fake snapshot.
 struct SessionSnapshotSource: SnapshotSource {
   let app: String
 
   func load() throws -> Capture {
-    throw UIToolError.notAttached
+    let client = try IPCClient.connect(socketPath: try Self.socketPath(for: app))
+    defer { client.close() }
+    try client.handshake()
+    // The full forest; the pure verbs navigate and prune over the Capture.
+    return try client.fetchCapture()
+  }
+
+  /// Resolve `<app>` (a pid or a bundle id) to its `/tmp/uitool-<pid>.sock` path.
+  /// A bundle id with no running instance has no session, so it is `NOT_ATTACHED`.
+  static func socketPath(for app: String) throws -> String {
+    if let pid = Int32(app) {
+      return UnixSocket.path(forPID: pid)
+    }
+    let running = NSRunningApplication.runningApplications(withBundleIdentifier: app)
+    guard let pid = running.first?.processIdentifier else {
+      throw UIToolError.notAttached
+    }
+    return UnixSocket.path(forPID: pid)
   }
 }
 
