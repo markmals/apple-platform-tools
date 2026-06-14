@@ -63,6 +63,24 @@ public final class IPCClient {
     return response.ok && (response.data?.closed ?? false)
   }
 
+  /// Inspect a live object — resolve `node` server-side and read its ivar values +
+  /// class reflection ([[command.uitool.inspect]]). `invoke` runs property getters;
+  /// `match` narrows by name. A node that no longer resolves is `STALE_NODE` (exit 5).
+  public func inspect(node: NodeID, invoke: Bool, match: String?) throws -> InspectResult {
+    let request = WireRequest(
+      id: nextID, op: "inspect", node: node.description, invoke: invoke, match: match)
+    nextID += 1
+    try connection.write(line: Output.line(request))
+    guard let data = connection.readLine() else { throw UIToolError.timeout }
+    let response = try JSONDecoder().decode(WireResponse<InspectResult>.self, from: data)
+    if let error = response.error {
+      if error.code == "STALE_NODE" { throw UIToolError.staleNode(node) }
+      throw UIToolError.from(wire: error)
+    }
+    guard response.ok, let result = response.data else { throw UIToolError.timeout }
+    return result
+  }
+
   /// Send one request, read one response line, decode it as the expected payload.
   /// A connection that closes before answering is `TIMEOUT` (the socket opened but
   /// the target never replied).

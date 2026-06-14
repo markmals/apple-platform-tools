@@ -23,12 +23,24 @@ public struct WireRequest: Codable, Equatable, Sendable {
   public let op: String
   /// The depth the forest snapshot is bounded to; `nil` means unbounded.
   public let maxDepth: Int?
+  /// `inspect`: the node id to resolve to a live object ([[command.uitool.inspect]]).
+  public let node: String?
+  /// `inspect`: invoke property getters (the gated `--invoke` path).
+  public let invoke: Bool?
+  /// `inspect`: narrow ivars/properties to names matching this regex.
+  public let match: String?
 
-  public init(id: Int, op: String, maxDepth: Int? = nil, v: Int = WireProtocol.version) {
+  public init(
+    id: Int, op: String, maxDepth: Int? = nil, node: String? = nil, invoke: Bool? = nil,
+    match: String? = nil, v: Int = WireProtocol.version
+  ) {
     self.v = v
     self.id = id
     self.op = op
     self.maxDepth = maxDepth
+    self.node = node
+    self.invoke = invoke
+    self.match = match
   }
 }
 

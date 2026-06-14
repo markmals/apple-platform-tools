@@ -1,4 +1,5 @@
 import AgentCLI
+import AppKit
 import RuntimeKit
 import UIToolCore
 
@@ -35,12 +36,60 @@ public enum RequestHandler {
     return .success(id: request.id, Capture(epoch: epoch, windows: windows))
   }
 
+  /// The `inspect` value-fetching op ([[command.uitool.inspect]]): resolve the
+  /// node id to a live object via [[domain.uitool.registry]] and reflect it. The
+  /// re-walk is the staleness gate — a node id whose epoch is stale or whose path
+  /// no longer resolves is `STALE_NODE` (exit 5), never a recycled read.
+  public static func inspect(_ request: WireRequest, epoch: Int) -> WireResponse<InspectResult> {
+    guard let nodeID = request.node else {
+      return .failure(
+        id: request.id,
+        WireError(
+          code: "BAD_SELECTOR", message: "inspect requires a node id",
+          recover: "pass --at <node-id>"
+        ))
+    }
+    let segments = nodeID.split(separator: ":", maxSplits: 1)
+    guard segments.count == 2, let nodeEpoch = Int(segments[0]) else {
+      return staleResponse(id: request.id, nodeID: nodeID)
+    }
+    let path = String(segments[1].split(separator: "#")[0])
+    guard nodeEpoch == epoch, let view = LiveTreeResolver.resolve(structuralPath: path) else {
+      return staleResponse(id: request.id, nodeID: nodeID)
+    }
+    let result = ObjectInspector.inspect(
+      view, nodeID: nodeID, matching: matcher(for: request.match))
+    return .success(id: request.id, result)
+  }
+
+  /// A name matcher from the `--match` regex, or `nil` (match all). An uncompilable
+  /// pattern is caught CLI-side before the request; here it degrades to a substring
+  /// match rather than crashing.
+  private static func matcher(for pattern: String?) -> ((String) -> Bool)? {
+    guard let pattern else { return nil }
+    if let regex = try? Regex(pattern) {
+      return { (try? regex.firstMatch(in: $0)) != nil }
+    }
+    return { $0.contains(pattern) }
+  }
+
+  private static func staleResponse(id: Int, nodeID: String) -> WireResponse<InspectResult> {
+    .failure(
+      id: id,
+      WireError(
+        code: "STALE_NODE", message: "node \(nodeID) no longer resolves",
+        recover: "re-read the tree (windows/tree/find) for a fresh node id"))
+  }
+
   /// Dispatch one decoded request to the JSON-Lines response the socket writes.
-  /// `ping` and the read ops succeed; an op outside the closed vocabulary is a
-  /// usage error (`BAD_SELECTOR`, exit 2 — [[domain.uitool.ipc]]), never a crash.
+  /// `ping` / the read ops / `inspect` succeed; an op outside the closed vocabulary
+  /// is a usage error (`BAD_SELECTOR`, exit 2 — [[domain.uitool.ipc]]), never a crash.
   public static func handle(_ request: WireRequest, epoch: Int) throws -> String {
     if request.op == "ping" {
       return try Output.line(ping(request, epoch: epoch))
+    }
+    if request.op == "inspect" {
+      return try Output.line(inspect(request, epoch: epoch))
     }
     if readOps.contains(request.op) {
       return try Output.line(read(request, epoch: epoch))
