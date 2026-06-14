@@ -26,3 +26,12 @@ run = "swift test"
 [tasks.install]
 description = "Build, ad-hoc sign, and install the distributable CLIs to ~/.local/bin"
 run = "scripts/install-tools.sh"
+
+[tasks.uitool-sign]
+description = "Build, then sign uitool with the debugger entitlement (required for `uitool attach`)"
+run = """
+swift build
+bin="$(swift build --show-bin-path)"
+codesign -s - --force --entitlements scripts/uitool-debugger.entitlements "$bin/uitool"
+echo "signed $bin/uitool for attach-to-running (com.apple.security.cs.debugger)"
+"""

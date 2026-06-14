@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  The entitlements `uitool` needs for the cooperative attach-to-running path
+  (`uitool attach`): com.apple.security.cs.debugger lets it acquire a
+  get-task-allow target's task port (task_for_pid), the same lever lldb carries.
+  No machine defang — this is the cooperative posture. `mise run uitool-sign`
+  applies it after a build (swift build strips it). See docs/uitool-dev-setup.md.
+-->
+<plist version="1.0">
+<dict>
+  <key>com.apple.security.get-task-allow</key>
+  <true/>
+  <key>com.apple.security.cs.debugger</key>
+  <true/>
+</dict>
+</plist>

@@ -65,22 +65,14 @@ Reaches into a running app without restarting it (lldb-style `task_for_pid` +
 remote load), so the on-screen state is preserved.
 
 1. Everything from 1a, **plus**
-2. **`uitool` itself must be signed with the debugger entitlement** — the same
-   one lldb carries — so it can acquire a `get-task-allow` target's task port:
+2. **`uitool` must be signed with the debugger entitlement** — the same one lldb
+   carries — so it can acquire a `get-task-allow` target's task port. `swift build`
+   strips the entitlement, so re-sign after every build with the bundled task:
    ```sh
-   cat > /tmp/uitool.entitlements <<'EOF'
-   <?xml version="1.0" encoding="UTF-8"?>
-   <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-   <plist version="1.0">
-   <dict>
-     <key>com.apple.security.cs.debugger</key>
-     <true/>
-   </dict>
-   </plist>
-   EOF
-   codesign -s - --force --entitlements /tmp/uitool.entitlements "$(which uitool)"
+   mise run uitool-sign     # builds, then signs with scripts/uitool-debugger.entitlements
    ```
-3. The target must be the **same user** and `get-task-allow`. Then:
+3. The target must be the **same user** and `get-task-allow` (a debug build is).
+   Then:
    ```sh
    uitool attach 4821        # by pid, or a running bundle id
    uitool tree 4821          # live state preserved
