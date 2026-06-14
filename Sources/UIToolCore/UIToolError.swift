@@ -23,6 +23,13 @@ public enum UIToolError: Error, Equatable {
   case staleNode(NodeID)
   /// No live session for the target (or injection failed).
   case notAttached
+  /// `attach`: the named target process does not exist (exit 3, attach-time only).
+  case appNotRunning(String)
+  /// `launch`: no launchable app resolves for the bundle id / path (exit 3).
+  case appNotFound(String)
+  /// Injection did not take — the inserted dylib never opened its socket within the
+  /// bounded wait (exit 4, attach/launch-time).
+  case injectionFailed(String)
   /// The attached app has no top-level window to root a required read at. A valid
   /// empty result, never a failure exit (exit 0).
   case noWindows
@@ -44,6 +51,9 @@ public enum UIToolError: Error, Equatable {
     case .badPredicate: return "BAD_PREDICATE"
     case .staleNode: return "STALE_NODE"
     case .notAttached: return "NOT_ATTACHED"
+    case .appNotRunning: return "APP_NOT_RUNNING"
+    case .appNotFound: return "APP_NOT_FOUND"
+    case .injectionFailed: return "INJECTION_FAILED"
     case .noWindows: return "NO_WINDOWS"
     case .timeout: return "TIMEOUT"
     case .preconditionFailed: return "PRECONDITION_FAILED"
@@ -56,7 +66,8 @@ public enum UIToolError: Error, Equatable {
   public var exitCode: Int32 {
     switch self {
     case .badSelector, .unknownField, .badPredicate: return 2
-    case .notAttached: return 4
+    case .appNotRunning, .appNotFound: return 3
+    case .notAttached, .injectionFailed: return 4
     case .staleNode: return 5
     case .preconditionFailed: return 6
     case .timeout: return 7
@@ -93,6 +104,9 @@ extension UIToolError: AgentError {
     case .badPredicate(let detail): return "\(code): \(detail)"
     case .staleNode(let id): return "\(code): \(id)"
     case .notAttached: return "\(code): no attached uitool session for the target"
+    case .appNotRunning(let detail): return "\(code): \(detail)"
+    case .appNotFound(let detail): return "\(code): \(detail)"
+    case .injectionFailed(let detail): return "\(code): \(detail)"
     case .noWindows: return "\(code): the attached app has no top-level windows"
     case .timeout: return "\(code): the main-thread read or socket timed out"
     case .preconditionFailed(let detail): return "\(code): \(detail)"
