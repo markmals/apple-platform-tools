@@ -31,6 +31,9 @@ public enum UIToolError: Error, Equatable {
   /// An injection precondition is unmet — `doctor`'s not-ready verdict (and the
   /// future `attach` gate). The detail names the failed checks.
   case preconditionFailed(String)
+  /// The injected server reports a protocol/schema version the CLI does not speak
+  /// — the separately-built CLI and dylib have desynced ([[domain.uitool.ipc]]).
+  case schemaMismatch(String)
 
   /// The wire `error.code` string — the closed vocabulary the agent branches on
   /// without parsing prose.
@@ -44,6 +47,7 @@ public enum UIToolError: Error, Equatable {
     case .noWindows: return "NO_WINDOWS"
     case .timeout: return "TIMEOUT"
     case .preconditionFailed: return "PRECONDITION_FAILED"
+    case .schemaMismatch: return "SCHEMA_MISMATCH"
     }
   }
 
@@ -57,6 +61,23 @@ public enum UIToolError: Error, Equatable {
     case .preconditionFailed: return 6
     case .timeout: return 7
     case .noWindows: return 0
+    case .schemaMismatch: return 8
+    }
+  }
+
+  /// Map a wire `error` object back to the closed vocabulary so the CLI exits on
+  /// the right code without parsing prose. An unrecognized code is treated as a
+  /// usage error (exit 2) rather than silently swallowed.
+  public static func from(wire: WireError) -> UIToolError {
+    switch wire.code {
+    case "BAD_SELECTOR": return .badSelector(wire.message)
+    case "UNKNOWN_FIELD": return .unknownField(wire.message)
+    case "BAD_PREDICATE": return .badPredicate(wire.message)
+    case "NOT_ATTACHED": return .notAttached
+    case "NO_WINDOWS": return .noWindows
+    case "TIMEOUT": return .timeout
+    case "SCHEMA_MISMATCH": return .schemaMismatch(wire.message)
+    default: return .badSelector(wire.message)
     }
   }
 }
@@ -75,6 +96,7 @@ extension UIToolError: AgentError {
     case .noWindows: return "\(code): the attached app has no top-level windows"
     case .timeout: return "\(code): the main-thread read or socket timed out"
     case .preconditionFailed(let detail): return "\(code): \(detail)"
+    case .schemaMismatch(let detail): return "\(code): \(detail)"
     }
   }
 }
