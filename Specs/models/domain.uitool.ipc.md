@@ -56,12 +56,13 @@ One `op` per request. The vocabulary is closed; an unknown `op` is a hard error.
 | `hierarchy` (maxDepth 0) | `node` | one node, no descendants | the single-node read is `hierarchy` pinned to depth 0 — `node` binds to the tree op at `maxDepth: 0` rather than a separate op |
 | `find` | `find` | descendant match against a [[domain.uitool.selector]] | streams matching nodes; sized by `--limit` / `--count-only` ([[domain.uitool.selector]]) |
 | `windows` | `windows` | the app's top-level windows | a list response; each entry is a window-rooted [[domain.uitool.node]] |
+| `inspect` | `inspect` | one object's ivar values + class reflection (`--invoke` adds getter values) | resolves a node id to a live object via [[domain.uitool.registry]]; the value-fetching op ([[command.uitool.inspect]], Phase 3.5) |
 
-The value-fetching ops (`class` / `ivars` / `value`) below are **deferred to the expensive-verb / injection pass** — they invoke live getters and are not part of the cheap-read MVP.
+The `inspect` value-fetching op is specified in [[command.uitool.inspect]] (Phase 3.5): ivar reads are safe and default; **getter invocation** is gated behind `--invoke`, runs on the target main thread under the bounded timeout, and is safety-screened. Raw setter **mutation** stays out of scope — v1 is read-only.
 
 ## Default mode: structural, no-invoke
 
-`class` / `ivars` / `value` ops invoke live getters / `-description` **inside someone else's process** — they can deadlock the main thread, mutate state, or crash the host. All value-fetching is gated behind an explicit flag with a hard per-query timeout. The cheap-read MVP verbs (`windows` / `tree` / `find` / `node`) are all structural, no-invoke reads.
+Reading ivar **memory** is safe (no target code runs) and is `inspect`'s default. Invoking property **getters** / `-description` runs the target's own code **inside someone else's process** — it can deadlock the main thread, mutate state, or crash the host. So getter invocation is gated behind `inspect --invoke`, runs on the target main thread under a hard per-query timeout, and is safety-screened ([[command.uitool.inspect]]). The cheap-read verbs (`windows` / `tree` / `find` / `node`) are all structural, no-invoke reads; `inspect` without `--invoke` is too.
 
 ## Threading (load-bearing)
 
