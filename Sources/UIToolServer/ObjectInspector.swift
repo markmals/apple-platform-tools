@@ -1,6 +1,7 @@
 import Foundation
 import ObjectiveC
 import RuntimeKit
+import RuntimeKitC
 import UIToolCore
 
 // SPEC: command.uitool.inspect
@@ -16,24 +17,32 @@ import UIToolCore
 @MainActor
 public enum ObjectInspector {
 
-  /// Reflect `object`. `matching` narrows ivars/properties by name; `resolveNode`
-  /// maps a referenced object to its node id when it is a registered view (Slice 2
-  /// passes the registry; until then it returns nil).
+  /// Reflect `object`. `matching` narrows ivars/properties by name; `invoke` runs
+  /// property getters for their values (the gated `--invoke` path); `resolveNode`
+  /// maps a referenced object to its node id when it is a registered view.
   public static func inspect(
     _ object: NSObject,
     nodeID: String,
+    invoke: Bool = false,
     matching: ((String) -> Bool)? = nil,
     resolveNode: (NSObject) -> String? = { _ in nil }
   ) -> InspectResult {
     let cls: AnyClass = object_getClass(object) ?? type(of: object)
     let mirror = RuntimeMirror(reflecting: object)
     let matches = matching ?? { _ in true }
+    let safe = RuntimeSafety.classIsSafe(cls)
 
     let ivars = readIvars(of: object, cls: cls, matches: matches, resolveNode: resolveNode)
     let properties = mirror.properties
       .filter { matches($0.name) }
-      .map {
-        InspectedProperty(name: $0.name, type: $0.typeEncoding, readonly: $0.attributes.isReadOnly)
+      .map { property in
+        InspectedProperty(
+          name: property.name, type: property.typeEncoding,
+          readonly: property.attributes.isReadOnly,
+          // Getter invocation runs the target's code — gated by --invoke AND the
+          // class safety screen ([[command.uitool.inspect]]).
+          value: (invoke && safe)
+            ? invokeGetter(object, name: property.name, resolveNode: resolveNode) : nil)
       }
 
     return InspectResult(
@@ -112,5 +121,31 @@ public enum ObjectInspector {
       fields["node"] = .string(node)
     }
     return .object(fields)
+  }
+
+  // MARK: - getter values (--invoke)
+
+  /// Invoke a property getter through the `@try/@catch` shim and normalize the
+  /// result. The shim swallows an ObjC exception (KVC non-compliance, a throwing
+  /// accessor) into nil; a getter that *hangs* is caught by the caller's bounded
+  /// main-thread hop ([[command.uitool.inspect]]).
+  private static func invokeGetter(
+    _ object: NSObject, name: String, resolveNode: (NSObject) -> String?
+  ) -> JSONValue {
+    kvcValue(uitool_safe_value_for_key(object, name) as AnyObject?, resolveNode: resolveNode)
+  }
+
+  /// Normalize a KVC return value: nil → null; an `NSNumber` → its scalar (bool
+  /// distinguished from a number); a string verbatim; any other object → `{class,
+  /// node?}` — never a raw pointer.
+  private static func kvcValue(_ value: AnyObject?, resolveNode: (NSObject) -> String?) -> JSONValue
+  {
+    guard let value else { return .null }
+    if let number = value as? NSNumber {
+      if CFGetTypeID(number) == CFBooleanGetTypeID() { return .bool(number.boolValue) }
+      return .number(number.doubleValue)
+    }
+    if let string = value as? String { return .string(string) }
+    return objectValue(value, resolveNode: resolveNode)
   }
 }

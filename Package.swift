@@ -172,8 +172,12 @@ let package = Package(
     // depth and ships a Capture (domain.uitool.server); the CLI does all
     // navigation/matching over it. SocketServer is the accept loop; the bounded
     // main-thread hop bridges to the AppKit reads. The UIToolBoot dylib is next.
+    // RuntimeKitC: the native safety floor (its first piece). The ObjC @try/@catch
+    // shim for value-fetching getter invocation, which Swift can't guard.
+    .target(name: "RuntimeKitC"),
     .target(
-      name: "UIToolServer", dependencies: ["AgentCLI", "UIToolCore", "RuntimeKit", "UIToolIPC"]),
+      name: "UIToolServer",
+      dependencies: ["AgentCLI", "UIToolCore", "RuntimeKit", "RuntimeKitC", "UIToolIPC"]),
     .testTarget(
       name: "UIToolServerTests",
       dependencies: [

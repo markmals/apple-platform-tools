@@ -71,4 +71,17 @@ struct ObjectInspectorTests {
     #expect(result.ivars.allSatisfy { $0.name.contains("count") })
     #expect(result.ivars.contains { $0.value == .number(42) })
   }
+
+  @Test func `without invoke no property carries a value`() {
+    let result = ObjectInspector.inspect(InspectFixture(), nodeID: "7:w0", invoke: false)
+    #expect(result.properties.allSatisfy { $0.value == nil })
+  }
+
+  @Test func `invoke reads property values from the getters`() {
+    let result = ObjectInspector.inspect(InspectFixture(), nodeID: "7:w0", invoke: true)
+    // The count property's getter returns 42 (KVC boxes it into an NSNumber).
+    #expect(result.properties.contains { $0.name == "count" && $0.value == .number(42) })
+    // A bool property reads back as a JSON bool, not a number.
+    #expect(result.properties.contains { $0.name == "enabled" && $0.value == .bool(true) })
+  }
 }

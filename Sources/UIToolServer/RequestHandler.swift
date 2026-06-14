@@ -58,7 +58,7 @@ public enum RequestHandler {
       return staleResponse(id: request.id, nodeID: nodeID)
     }
     let result = ObjectInspector.inspect(
-      view, nodeID: nodeID, matching: matcher(for: request.match))
+      view, nodeID: nodeID, invoke: request.invoke ?? false, matching: matcher(for: request.match))
     return .success(id: request.id, result)
   }
 
