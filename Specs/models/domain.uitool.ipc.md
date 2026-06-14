@@ -23,8 +23,10 @@ One request object in, one response (or a stream of node objects) out. Synchrono
 ```jsonc
 // request
 {"v":1,"id":7,"op":"hierarchy","window":"auto","maxDepth":3,"include":["class","frame","layer"]}
-// response (one line)
-{"v":1,"id":7,"ok":true,"data":{ "root": { /* a ViewNode */ } }}
+// response (one line) — `data` is a raw snapshot (a Capture / WindowSnapshot subtree),
+// NOT a pre-projected node: the CLI applies rounding, key order, and node-id
+// stringification ([[domain.uitool.node]]). The server holds no policy.
+{"v":1,"id":7,"ok":true,"data":{ /* a Capture: {epoch, windows:[…]} or a subtree */ }}
 // error
 {"v":1,"id":7,"ok":false,"error":{"code":"STALE_NODE","message":"…","recover":"…"}}
 ```
@@ -115,9 +117,11 @@ A successful query that matches **nothing** is exit **0** (with `_meta.totalMatc
 
 ## Relationships
 
-- [[domain.uitool.node]] — the `data` payload shape.
+- [[domain.uitool.server]] — the in-target unit that speaks this protocol; it ships a raw `Capture` as a read's `data` and the CLI projects it. The threading invariants above are its law.
+- [[domain.uitool.boot]] — the dylib that hosts the server and creates/unlinks the socket.
+- [[domain.uitool.node]] — the projected shape the CLI derives from the raw `data` snapshot.
 - [[domain.uitool.node-id]] / [[domain.uitool.injection]] — sources of `STALE_NODE` / precondition errors.
-- [[domain.uitool.selector]] — source of `BAD_SELECTOR`; the matcher `find` runs over the wire.
+- [[domain.uitool.selector]] — source of `BAD_SELECTOR`; the matcher runs **CLI-side** over the `Capture` the server streams for `find`.
 
 ## Notes
 

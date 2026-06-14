@@ -25,9 +25,11 @@ The tool was previously documented as if **every** target were hostile and the f
 
 - **Target.** An app the **user** builds and signs for development. A debug build is signed with `get-task-allow` (Xcode does this by default) — the entitlement by which the app **opts in** to being debugged / injected. Its hardened runtime is off, or it carries `com.apple.security.cs.allow-dyld-environment-variables` + `com.apple.security.cs.disable-library-validation`. The user controls all of this because it is their build.
 - **Why it works with SIP enabled.** SIP's debugging restriction only protects **Apple-signed system / restricted** processes. A `get-task-allow` target is honored for task-port access and `dyld` insertion **regardless of SIP** — exactly how lldb / Xcode / Reveal / InjectionIII attach to your own apps on a stock Mac. Library validation and the hardened runtime are **per-process** flags the user sets in their own build, not machine-wide switches.
-- **Mechanism (v1 = launch).** Spawn the target with `DYLD_INSERT_LIBRARIES=<…>/UIToolBoot.dylib` (`posix_spawn`) so the boot dylib loads at launch and `dlopen`s the `UIToolServer` ([[domain.uitool.ipc]]). A running `get-task-allow` target can instead be attached via its task port (lldb-style) and the dylib remote-loaded — heavier, **a later slice** (see *Attach mechanism*).
+- **Mechanism (v1 = both cooperative paths).** Two ways in, both shipping in v1 for `get-task-allow` targets:
+  - **launch** ([[command.uitool.launch]]) — spawn the target with `DYLD_INSERT_LIBRARIES=<…>/UIToolBoot.dylib` (`posix_spawn`) so the [[domain.uitool.boot]] dylib loads before `main` and starts the [[domain.uitool.server]] ([[domain.uitool.ipc]]). Robust across OS/app updates; **loses the target's current on-screen state** (it is a fresh launch).
+  - **attach-to-running** ([[command.uitool.attach]]) — resolve a **running** `get-task-allow` target's task port (lldb-style `task_for_pid`, permitted for your own debuggable same-user process on a stock Mac) and remote-`dlopen` the boot dylib into it. **Preserves the target's live UI state** — the research default. Heavier than launch but a well-trodden technique for your own apps (lldb / Reveal / InjectionIII do it daily); the only genuinely hard, deferred route is the *unrestricted* running-attach into a target you did not sign (see *Attach mechanism*).
 - **Machine requirements: NONE beyond the OS.** No `csrutil`, no `nvram boot-args`, no library-validation override, no reboot. You **do** need the **arm64** `UIToolBoot` dylib built: a normal Xcode app is arm64, so the injectable must match arm64. The `-arm64e_preview_abi` boot-arg is **not** involved here — it exists only for third-party arm64e code.
-- **Per-target preconditions** (checked at attach / launch, **not** by the machine doctor): the target is debuggable (`get-task-allow`) and, for the launch path, permits dyld env vars. `doctor` cannot check these — it has no target — so they live on `attach` / `sip-preflight`, not in the machine report.
+- **Per-target preconditions** (checked at attach / launch, **not** by the machine doctor): the target is debuggable (`get-task-allow`) and, for the launch path, permits dyld env vars; for the **attach-to-running** path the target must also be the **same user** (so `task_for_pid` is permitted without root) and `uitool` itself must be signed with the debugger entitlement (`com.apple.security.cs.debugger`) — the per-process lever that lets it acquire a `get-task-allow` target's task port, the same entitlement lldb carries. `doctor` cannot check the *target* preconditions — it has no target — so they live on `attach` / `launch`, not in the machine report; whether `doctor` surfaces the `uitool`-is-debugger-signed fact (a machine-stable property of the installed binary) is its own call, but it does not change the frozen `cooperative.requires` set below.
 
 ## Posture 2 — Unrestricted (arbitrary / system / notarized targets)
 
@@ -98,13 +100,13 @@ This is the load-bearing honesty of the new shape: the floor is "build the arm64
 
 ## Attach mechanism
 
-| Path | Posture | Mechanism | Trade-off |
-| --- | --- | --- | --- |
-| **launch** (v1) | cooperative (and unrestricted-relaunch) | spawn the target under `DYLD_INSERT_LIBRARIES=…/UIToolBoot.dylib` (`posix_spawn`) | simplest, robust across OS/app updates; **loses current UI state** |
-| **task-port attach** | cooperative (later slice) | attach a **running** `get-task-allow` target via its task port (lldb-style) and remote-load the dylib | preserves live state; heavier; **a later slice**, deferred past the launch path |
-| **first-party running-attach** | unrestricted | MIP-style `launchservicesd`-checkin hook + Mach thread-hijack (PAC-signed bootstrap; processor-set task-port route) | preserves live state; brittle, version-fragile, the hard sub-project |
+| Path | Posture | v1? | Mechanism | Trade-off |
+| --- | --- | --- | --- | --- |
+| **launch** | cooperative (and unrestricted-relaunch) | **v1** | spawn the target under `DYLD_INSERT_LIBRARIES=…/UIToolBoot.dylib` (`posix_spawn`) | simplest, robust across OS/app updates; **loses current UI state** |
+| **task-port attach** | cooperative | **v1** | resolve a **running** `get-task-allow` target's task port (lldb-style `task_for_pid`, same-user, `uitool` debugger-entitled) and remote-`dlopen` the dylib | **preserves live state** — the research default; heavier than launch but a known technique for your own apps |
+| **first-party running-attach** | unrestricted | deferred | MIP-style `launchservicesd`-checkin hook + Mach thread-hijack (PAC-signed bootstrap; processor-set task-port route) | preserves live state; brittle, version-fragile, **the hard sub-project** |
 
-Develop the walker / query layers against a self-built non-hardened harness (`SampleAppKit`) via the **launch path** first — zero injection risk, fast loop — then harden the running-attach routes one target at a time. The cooperative **launch** path (`DYLD_INSERT` at spawn) is the v1 mechanism; the running-target **task-port attach** is a later slice. For unrestricted system targets, the running-attach `launchservicesd` route is the hard, deferred sub-project (HANDOFF M5).
+Both **cooperative** paths — launch and task-port attach-to-running — ship in v1. Develop the walker / query layers against a self-built non-hardened harness (`SampleAppKit`) via the **launch path** first (zero task-port complexity, fastest loop), then bring up cooperative task-port attach against the same harness so the live-state default works on a stock Mac. The genuinely deferred route is the **unrestricted** running-attach — injecting into a target you did **not** sign (a system / notarized app) via the `launchservicesd` hook — which remains the hard sub-project (HANDOFF M5). The distinction that moved attach-to-running into v1: for **your own** `get-task-allow` app, `task_for_pid` + remote `dlopen` is the everyday lldb path and needs no machine defang; only a target with no per-app opt-in forces the brittle hook.
 
 ## Lifecycle
 
@@ -124,13 +126,15 @@ Develop the walker / query layers against a self-built non-hardened harness (`Sa
 
 ## Relationships
 
-- [[domain.uitool.ipc]] — the server (`UIToolServer`) the injected dylib starts, and the `NOT_ATTACHED` error a failed / absent session surfaces.
-- [[domain.uitool.node-id]] — the session epoch bumped on `attach`.
-- Consumed by the `doctor`, `list-apps`, `attach`, `detach` commands.
+- [[domain.uitool.boot]] — the dylib both postures load into the target; the foothold whose constructor starts the server. Its `injectable-arm64` / `injectable-arm64e` presence is what `doctor` checks.
+- [[domain.uitool.server]] — the in-target unit the boot dylib starts; the thing on the far end of the socket.
+- [[domain.uitool.ipc]] — the wire the server speaks, and the `NOT_ATTACHED` error a failed / absent session surfaces.
+- [[domain.uitool.node-id]] — the session epoch bumped on `attach` / `launch`.
+- Consumed by the `doctor`, `list-apps`, [[command.uitool.launch]], [[command.uitool.attach]], `detach` commands.
 
 ## Notes
 
 - `-arm64e_preview_abi` is a single point of failure for the **unrestricted** posture only — perpetually "preview", removable by Apple in any point release. The cooperative posture does not depend on it. Track Apple's dyld / AMFI hardening as an existential dependency of the unrestricted path.
 - arm64e injection is actively regressing on Tahoe 26 — pin one 26.x build on the dev box for the unrestricted posture; keep the AX fallback wired. The cooperative posture (plain-arm64 into a `get-task-allow` app) is unaffected by the arm64e regression.
-- **The launch path is the v1 mechanism for both postures' first use.** Preserving the target's live UI state (the running-attach / task-port routes) is core to the unrestricted research use case ("inspect Mail as it sits right now"), but it is **deferred** past the launch path; oracle development (M0–M4) uses the launch path against `SampleAppKit`.
+- **The launch path is the v1 bring-up order, not the v1 ceiling.** Oracle development (M0–M4) starts on the launch path against `SampleAppKit` — zero task-port complexity, fastest loop — and cooperative **task-port attach-to-running** follows in the same v1, so the live-state research default ("inspect this app as it sits right now") works on a stock Mac for your own apps. What stays **deferred** is preserving live state for a target you did **not** sign: the *unrestricted* running-attach via the `launchservicesd` hook (HANDOFF M5). Live-state inspection is v1 for cooperative targets and deferred only for non-cooperative ones.
 - **`doctor` detects and instructs by default; `doctor --fix` opts into auto-remediation** of the **unrestricted** stack only — running the `nvram boot-args` / `DisableLibraryValidation` `defaults write` commands with sudo. `--fix` echoes each command before running it, never runs implicitly, and cannot complete steps requiring Recovery (SIP via `csrutil`) or a reboot — it sets what it can, then prints exactly which manual steps + reboot remain. There is nothing to `--fix` for the cooperative posture: its only deferred blocker is building the arm64 dylib.
