@@ -1,7 +1,7 @@
 ---
 id: error.uitool.attach-timeout
 kind: error
-depends-on: [domain.uitool.ipc, command.uitool.attach]
+depends-on: [domain.uitool.ipc, command.uitool.attach, command.uitool.launch]
 ---
 
 # Socket or handshake timed out
@@ -16,7 +16,7 @@ Exit code 7 ([[domain.uitool.ipc]]) and a one-line structured JSON error on stde
 
 > `{"ok":false,"error":{"code":"TIMEOUT","message":"target main thread did not answer the handshake within the timeout","recover":"dismiss any modal in the target and re-attach"}}`
 
-The wire `error.code` is the canonical `TIMEOUT` (exit 7). Both timeout shapes at attach map to this one code: the main-thread hop exceeding its bounded window (the handshake reached the main thread but it did not answer), and the socket-level case where the handshake never returned at all. They are not split into separate codes — `TIMEOUT` covers the attach-time bounded-wait family, the same way query-time main-thread hops report `TIMEOUT` ([[domain.uitool.ipc]]).
+The wire `error.code` is the canonical `TIMEOUT` (exit 7). Both timeout shapes at attach or launch map to this one code: the main-thread hop exceeding its bounded window (the handshake reached the main thread but it did not answer), and the socket-level case where the handshake never returned at all. They are not split into separate codes — `TIMEOUT` covers the attach/launch-time bounded-wait family, the same way query-time main-thread hops report `TIMEOUT` ([[domain.uitool.ipc]]).
 
 ## What the user can do
 
@@ -29,6 +29,6 @@ The wire `error.code` is the canonical `TIMEOUT` (exit 7). Both timeout shapes a
 
 ## Related
 
-- [[command.uitool.attach]] — the verb that surfaces this.
+- [[command.uitool.attach]] / [[command.uitool.launch]] — the verbs that surface this.
 - [[domain.uitool.ipc]] — threading and the bounded main-thread timeout.
-- [[story.uitool.attach-inject]] — scenario.uitool.attach-inject.handshake-timeout.
+- [[story.uitool.attach-inject]] — scenario.uitool.attach-inject.handshake-timeout; [[story.uitool.launch]] — scenario.uitool.launch.handshake-timeout.

@@ -1,7 +1,7 @@
 ---
 id: error.uitool.attach-schema-mismatch
 kind: error
-depends-on: [domain.uitool.ipc, command.uitool.attach]
+depends-on: [domain.uitool.ipc, command.uitool.attach, command.uitool.launch]
 ---
 
 # Schema version mismatch
@@ -14,13 +14,13 @@ The channel opened and the handshake completed, but the injected server reports 
 
 Exit code 8 ([[domain.uitool.ipc]]) and a one-line structured JSON error on stderr naming the cause and a recovery hint — never a stack trace.
 
-> `{"ok":false,"error":{"code":"SCHEMA_MISMATCH","message":"CLI expects schemaVersion \"1.0.0\", server reports \"2.0.0\"","recover":"rebuild uitool-boot.dylib / FLEXMac.framework against the same source as the CLI"}}`
+> `{"ok":false,"error":{"code":"SCHEMA_MISMATCH","message":"CLI expects schemaVersion \"1.0.0\", server reports \"2.0.0\"","recover":"rebuild UIToolBoot.dylib (and UIToolServer) from the same source as the CLI"}}`
 
 The wire `error.code` for the version mismatch is `SCHEMA_MISMATCH` (exit 8) — canonical.
 
 ## What the user can do
 
-- Rebuild the boot dylib and FLEX-mac framework from the same source as the CLI so both carry the same `schemaVersion`, then re-attach.
+- Rebuild [[domain.uitool.boot]] and [[domain.uitool.server]] from the same source as the CLI so both carry the same `schemaVersion`, then re-attach or re-launch.
 
 ## Underlying cause (informational)
 
@@ -28,5 +28,5 @@ The wire `error.code` for the version mismatch is `SCHEMA_MISMATCH` (exit 8) —
 
 ## Related
 
-- [[command.uitool.attach]] — the verb that surfaces this.
+- [[command.uitool.attach]] / [[command.uitool.launch]] — the verbs that surface this.
 - [[domain.uitool.ipc]] — the schema handshake and version invariant.

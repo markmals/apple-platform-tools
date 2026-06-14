@@ -1,7 +1,7 @@
 ---
 id: story.uitool.attach-release
 kind: story
-depends-on: [domain.uitool.injection, domain.uitool.ipc]
+depends-on: [domain.uitool.injection, domain.uitool.ipc, command.uitool.launch]
 ---
 
 # Release an inspected app
@@ -37,15 +37,15 @@ depends-on: [domain.uitool.injection, domain.uitool.ipc]
 
 <!-- id: scenario.uitool.attach-release.app-survives -->
 
-- Given a target app the agent attached to via the running-process path (Path B)
+- Given a target app the agent attached to via `uitool attach` (the attach-to-running path)
 - When the agent detaches from the target
 - Then the target app is still running
 
-### Scenario 4: Lifecycle of a relaunch-injected target after detach
+### Scenario 4: Lifecycle of a launched target after detach
 
 <!-- id: scenario.uitool.attach-release.app-survives-relaunched -->
 
-- Given a target app the agent attached to via the relaunch path (Path A)
+- Given a target app the agent started under inspection via `uitool launch`
 - When the agent detaches from the target
-- Then the relaunched process is still running — detach removes only the inspection bridge and never terminates the target
-- And its lifecycle thereafter is the researcher's concern, not the tool's (the tool that relaunched it does not adopt ownership; defined by the injection half where Path A is built)
+- Then the launched process is still running — detach removes only the inspection bridge and never terminates the target
+- And its lifecycle thereafter is the researcher's concern, not the tool's ([[command.uitool.launch]] does not adopt ownership of the process it spawned past detach)

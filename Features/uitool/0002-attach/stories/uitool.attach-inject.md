@@ -18,7 +18,7 @@ depends-on: [domain.uitool.injection, domain.uitool.ipc, domain.uitool.node-id]
 
 - Given the environment preconditions for injection are satisfied ([[domain.uitool.injection]])
 
-### Scenario 1: Attach to the running process by default, preserving its state
+### Scenario 1: Attach to the running process, preserving its state
 
 <!-- id: scenario.uitool.attach-inject.running -->
 
@@ -28,20 +28,13 @@ depends-on: [domain.uitool.injection, domain.uitool.ipc, domain.uitool.node-id]
 - And the result reports the attach path taken as running
 - And the result reports the per-target channel as open
 - And the result carries a session marker distinct from any prior session ([[domain.uitool.node-id]])
-- And the result does not claim to confirm the app's pre-attach UI state was preserved — state preservation is Path B's purpose but is not externally observable from the command's output, so no result field asserts it
+- And the result does not claim to confirm the app's pre-attach UI state was preserved — state preservation is the attach-to-running path's purpose but is not externally observable from the command's output, so no result field asserts it
 
-### Scenario 2: Relaunch-inject a target when a clean-launch state is wanted
+> Relaunching a target for a clean-launch state is [[command.uitool.launch]]'s job
+> ([[story.uitool.launch]] scenario.uitool.launch.cold / .replace), not a flag on
+> attach — `attach` is attach-to-running only.
 
-<!-- id: scenario.uitool.attach-inject.relaunch -->
-
-- Given a target app that is running
-- When the agent attaches to the target requesting the relaunch path
-- Then the attach succeeds with exit code 0
-- And the result reports the attach path taken as relaunch
-- And the result reports the per-target channel as open
-- And the result carries a session marker distinct from any prior session ([[domain.uitool.node-id]])
-
-### Scenario 3: Attaching an already-attached target is idempotent
+### Scenario 2: Attaching an already-attached target is idempotent
 
 <!-- id: scenario.uitool.attach-inject.idempotent -->
 
@@ -51,7 +44,7 @@ depends-on: [domain.uitool.injection, domain.uitool.ipc, domain.uitool.node-id]
 - And the result reports the per-target channel as open
 - And the session marker is unchanged from the first attach ([[domain.uitool.injection]] lifecycle: a second attach reuses the existing server)
 
-### Scenario 4: Each fresh attach starts a new session
+### Scenario 3: Each fresh attach starts a new session
 
 <!-- id: scenario.uitool.attach-inject.new-epoch -->
 
@@ -60,7 +53,7 @@ depends-on: [domain.uitool.injection, domain.uitool.ipc, domain.uitool.node-id]
 - Then the attach succeeds with exit code 0
 - And the session marker differs from the previous session's marker ([[domain.uitool.node-id]] epoch is bumped on attach)
 
-### Scenario 5: Attaching a target that is not running fails distinctly
+### Scenario 4: Attaching a target that is not running fails distinctly
 
 <!-- id: scenario.uitool.attach-inject.not-running -->
 
@@ -69,7 +62,7 @@ depends-on: [domain.uitool.injection, domain.uitool.ipc, domain.uitool.node-id]
 - Then the attach fails with exit code 3 ([[domain.uitool.ipc]])
 - And a structured error names the cause and a recovery hint
 
-### Scenario 6: Injection that does not take is reported, never silently accepted
+### Scenario 5: Injection that does not take is reported, never silently accepted
 
 <!-- id: scenario.uitool.attach-inject.injection-failed -->
 
@@ -79,7 +72,7 @@ depends-on: [domain.uitool.injection, domain.uitool.ipc, domain.uitool.node-id]
 - And a structured error names the cause and a recovery hint
 - And the agent is never told the attach succeeded
 
-### Scenario 7: A failed injection precondition refuses up front
+### Scenario 6: A failed injection precondition refuses up front
 
 <!-- id: scenario.uitool.attach-inject.precondition-failed -->
 
@@ -89,7 +82,7 @@ depends-on: [domain.uitool.injection, domain.uitool.ipc, domain.uitool.node-id]
 - And a structured error names exactly which precondition failed plus a one-line remediation ([[error.uitool.attach-precondition]])
 - And the agent is never told the attach succeeded
 
-### Scenario 8: A handshake that the target never answers times out
+### Scenario 7: A handshake that the target never answers times out
 
 <!-- id: scenario.uitool.attach-inject.handshake-timeout -->
 
@@ -99,7 +92,7 @@ depends-on: [domain.uitool.injection, domain.uitool.ipc, domain.uitool.node-id]
 - And a structured error names the cause and a recovery hint ([[error.uitool.attach-timeout]])
 - And the agent is never told the attach succeeded
 
-### Scenario 9: A schema-version mismatch is reported, never silently accepted
+### Scenario 8: A schema-version mismatch is reported, never silently accepted
 
 <!-- id: scenario.uitool.attach-inject.schema-mismatch -->
 
