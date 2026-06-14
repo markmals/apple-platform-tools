@@ -73,17 +73,19 @@ extension Doctor {
       return dict["DisableLibraryValidation"] as? Bool
     }
 
-    /// Whether the arm64 `UIToolBoot` injectable (the cooperative-path slice for a
-    /// stock arm64 Xcode app) is on disk. The injection half is not yet built, so
-    /// this is honestly `false` here (present-and-readable but absent), never `nil`
-    /// — the disk read itself does not fail.
+    /// Whether the `UIToolBoot` injectable is on disk for the cooperative path. Now
+    /// that the boot dylib is built, this checks the dev location (next to `uitool`,
+    /// or `UITOOL_BOOT_DYLIB`) — so a stock Mac with the dylib built reports
+    /// cooperative-ready. (The dev build is the host-arch slice; a distinct arm64
+    /// slice for inspecting external arm64 apps is a packaging concern.)
     static func injectableArm64Present() -> Bool {
-      false
+      BootDylib.resolvedPath() != nil
     }
 
     /// Whether the arm64e `UIToolBoot` injectable (the unrestricted-path slice that
-    /// matches the arm64e system frameworks) is on disk. Honestly `false` for the
-    /// same reason — the deferred injection half — never `nil`.
+    /// matches the arm64e system frameworks) is on disk. The unrestricted slice is a
+    /// separate build concern from the cooperative dev dylib, so it stays `false`
+    /// until that build lands — never `nil`, the disk read itself does not fail.
     static func injectableArm64ePresent() -> Bool {
       false
     }
