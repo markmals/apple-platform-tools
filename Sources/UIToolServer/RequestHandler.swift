@@ -84,6 +84,7 @@ public enum RequestHandler {
   /// Dispatch one decoded request to the JSON-Lines response the socket writes.
   /// `ping` / the read ops / `inspect` succeed; an op outside the closed vocabulary
   /// is a usage error (`BAD_SELECTOR`, exit 2 — [[domain.uitool.ipc]]), never a crash.
+  /// (`classes` is dispatched off-main by `makeBoundedHandler`, not here.)
   public static func handle(_ request: WireRequest, epoch: Int) throws -> String {
     if request.op == "ping" {
       return try Output.line(ping(request, epoch: epoch))

@@ -81,6 +81,27 @@ public final class IPCClient {
     return result
   }
 
+  /// List the target's loaded classes matching `pattern` ([[command.uitool.classes]]).
+  public func classList(pattern: String, limit: Int) throws -> ClassList {
+    try send(WireRequest(id: nextID, op: "classes", match: pattern, limit: limit))
+  }
+
+  /// Reflect one loaded class by name ([[command.uitool.classes]]).
+  public func classInfo(className: String) throws -> ClassInfo {
+    try send(WireRequest(id: nextID, op: "classes", className: className))
+  }
+
+  /// Send a request and decode the expected payload, mapping a wire error.
+  private func send<P: Codable & Sendable>(_ request: WireRequest) throws -> P {
+    nextID += 1
+    try connection.write(line: Output.line(request))
+    guard let data = connection.readLine() else { throw UIToolError.timeout }
+    let response = try JSONDecoder().decode(WireResponse<P>.self, from: data)
+    if let error = response.error { throw UIToolError.from(wire: error) }
+    guard response.ok, let payload = response.data else { throw UIToolError.timeout }
+    return payload
+  }
+
   /// Send one request, read one response line, decode it as the expected payload.
   /// A connection that closes before answering is `TIMEOUT` (the socket opened but
   /// the target never replied).

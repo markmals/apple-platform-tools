@@ -42,6 +42,11 @@ private final class ResultBox<T>: @unchecked Sendable {
 /// (background thread) and the AppKit reads (main thread) are bridged.
 public func makeBoundedHandler(epoch: Int) -> @Sendable (WireRequest) -> String {
   { request in
+    // `classes` reads thread-safe runtime metadata and touches no view/instance
+    // state, so it runs off-main — a 30k-class enumeration would blow the hop.
+    if request.op == "classes" {
+      return ClassesHandler.handle(request)
+    }
     let line: String? = MainThreadHop.run {
       MainActor.assumeIsolated {
         (try? RequestHandler.handle(request, epoch: epoch)) ?? timeoutLine(id: request.id)

@@ -27,12 +27,16 @@ public struct WireRequest: Codable, Equatable, Sendable {
   public let node: String?
   /// `inspect`: invoke property getters (the gated `--invoke` path).
   public let invoke: Bool?
-  /// `inspect`: narrow ivars/properties to names matching this regex.
+  /// `inspect`/`classes`: narrow to names matching this regex.
   public let match: String?
+  /// `classes --class`: the one class to reflect (reflect mode).
+  public let className: String?
+  /// `classes --match`: cap the returned class names (list mode).
+  public let limit: Int?
 
   public init(
     id: Int, op: String, maxDepth: Int? = nil, node: String? = nil, invoke: Bool? = nil,
-    match: String? = nil, v: Int = WireProtocol.version
+    match: String? = nil, className: String? = nil, limit: Int? = nil, v: Int = WireProtocol.version
   ) {
     self.v = v
     self.id = id
@@ -41,6 +45,8 @@ public struct WireRequest: Codable, Equatable, Sendable {
     self.node = node
     self.invoke = invoke
     self.match = match
+    self.className = className
+    self.limit = limit
   }
 }
 
