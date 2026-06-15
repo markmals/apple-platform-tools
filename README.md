@@ -74,13 +74,12 @@ family. The pure interpretation logic is unit-tested against checked-in fixtures
 | Target | Kind | Purpose | Key dependencies | Realizes |
 | --- | --- | --- | --- | --- |
 | `BinaryFoundation` | library | Universal-binary + Mach-O + dyld-shared-cache image loading, env-free with explicit `useSharedCache` / `runtimeRoots`. Shared by `headerdump` and `redump`. | `MachOKit` | `domain.macho-image` |
-| `HeaderDumpRuntimeObjC` | ObjC target (`publicHeadersPath: include`, macOS/iOS-gated) | The live ObjC-runtime class-snapshot fallback (`PHRuntimeObjCInspector`) used when static metadata parsing fails. | `objc/runtime`, `Foundation` (system) | — |
-| `HeaderDumpCore` | library | Private-framework header extraction via ObjC + Swift section parsing with the runtime fallback. The implementation of `headerdump`. | `BinaryFoundation`, `HeaderDumpRuntimeObjC`, `MachOKit`, `MachOObjCSection`, `ObjCDump`, `MachOSwiftSection`, `SwiftInterface` | `command.headerdump.dump` |
+| `HeaderDumpCore` | library | Private-framework header extraction via ObjC + Swift section parsing, with a pure-Swift ObjC-runtime fallback (`RuntimeObjCInspector`) used when static metadata parsing fails. The implementation of `headerdump`. | `BinaryFoundation`, `MachOKit`, `MachOObjCSection`, `ObjCDump`, `MachOSwiftSection`, `SwiftInterface` | `command.headerdump.dump` |
 | `headerdump` | executable **(product)** | Thin entry point delegating to `HeaderDumpCore.HeaderDumpCLI.main()`. | `HeaderDumpCore` | — |
 | `RedumpCore` | library | Native Mach-O RE inspection — info, segments, symbols, imports, exports, strings, plus disassembler-backend detection. The dependency-free half of `redump`. | `MachOKit` | `command.redump.info` · `.segments` · `.symbols` · `.imports` · `.exports` · `.strings` · `.backends` |
 | `redump` | executable **(product)** | The RE CLI — `ArgumentParser` subcommands over `RedumpCore`, AgentCLI-contract JSON. The IDA/Hopper disassembler half stays gated until those tools are installed. | `AgentCLI`, `RedumpCore`, `swift-argument-parser` | `command.redump.*` |
 | `BinaryFoundationTests` | test | Mach-O / shared-cache image loading. | `BinaryFoundation`, `TestSupport`, `MachOKit` | `domain.macho-image` |
-| `HeaderDumpCLITests` | test | Story-level verification of the framework dump behavior. | `HeaderDumpCore`, `TestSupport`, `HeaderDumpRuntimeObjC`, `MachOKit` | `story.headerdump.dump-framework` |
+| `HeaderDumpCLITests` | test | Story-level verification of the framework dump behavior, plus the runtime-fallback inspector. | `HeaderDumpCore`, `TestSupport`, `MachOKit` | `story.headerdump.dump-framework` |
 | `RedumpCoreTests` | test | Per-command unit verification of every `redump` verb. | `RedumpCore`, `TestSupport`, `MachOKit` | `command.redump.*` |
 
 ### Live runtime introspection — `uitool` *(CLI live; injection planned)*
@@ -129,8 +128,10 @@ A few non-obvious facts about the target graph:
   purity boundary — pure logic in, I/O at the edges — is repo-wide.
 - `sdk-api`, `sdk-search`, and `redump` declare `AgentCLI` as a **direct**
   dependency; `headerdump` does **not** — it depends only on `HeaderDumpCore`.
-- `HeaderDumpRuntimeObjC` is the only ObjC/`publicHeadersPath` target and is gated
-  behind `.when(platforms: [.macOS, .iOS])`.
+- The only authored ObjC left is two tiny shims — `RuntimeKitC` (the
+  `NSException`-catch getter guard) and `UIToolBootCtor` (the `+load` bootstrap) —
+  kept because Swift can express neither; everything else, including the headerdump
+  runtime fallback and the mach injector, is pure Swift.
 - `PatternIndex` ships a processed `Data/` resource bundle (the HIG corpus);
   `SymbolGraphIndex` is the only target that pulls in `swift-subprocess`.
 - `TestSupport` lives at a custom path (`Tests/Support`) and is the shared
