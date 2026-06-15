@@ -15,6 +15,10 @@ import UIToolServer
 /// touches **no AppKit** on the loading thread, and never crashes the host — a
 /// bind failure simply leaves no socket, which the CLI's bounded poll surfaces as
 /// `INJECTION_FAILED`.
+// swift-format-ignore: AlwaysUseLowerCamelCase
+// The name is a load-bearing C-ABI symbol: the injector's shellcode resolves it
+// via dlsym(RTLD_DEFAULT, "uitool_boot_start") and the +load shim calls it, so it
+// cannot be camelCased.
 @_cdecl("uitool_boot_start")
 public func uitool_boot_start() {
   let path = UnixSocket.path(forPID: getpid())
