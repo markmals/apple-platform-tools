@@ -16,7 +16,7 @@ struct UITool: AsyncParsableCommand {
       "Inspect a running AppKit/UIKit app's view tree and object graph as deterministic JSON.",
     subcommands: [
       Doctor.self, ListApps.self, Windows.self, Tree.self, Find.self, Node.self, Inspect.self,
-      Launch.self, Attach.self, Detach.self,
+      SchemaCommand.self, Launch.self, Attach.self, Detach.self,
     ]
   )
 }
