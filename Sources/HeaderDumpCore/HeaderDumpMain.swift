@@ -14,7 +14,6 @@ import ObjCDump
 #endif
 #if canImport(ObjectiveC)
   import ObjectiveC
-  import HeaderDumpRuntimeObjC
 #endif
 
 protocol SwiftInterfaceBuilding {
@@ -1090,27 +1089,27 @@ private func dumpObjC(
 
 #if canImport(ObjectiveC)
   private func runtimePropertyInfo(
-    from snapshot: PHRuntimeObjCPropertySnapshot
+    from snapshot: RuntimeObjCProperty
   ) -> ObjCPropertyInfo {
     ObjCPropertyInfo(
       name: snapshot.name,
       attributes: snapshot.attributesString,
-      isClassProperty: snapshot.isClassProperty
+      isClassProperty: snapshot.classProperty
     )
   }
 
   private func runtimeMethodInfo(
-    from snapshot: PHRuntimeObjCMethodSnapshot
+    from snapshot: RuntimeObjCMethod
   ) -> ObjCMethodInfo {
     ObjCMethodInfo(
       name: snapshot.name,
       typeEncoding: snapshot.typeEncoding,
-      isClassMethod: snapshot.isClassMethod
+      isClassMethod: snapshot.classMethod
     )
   }
 
   private func runtimeIvarInfo(
-    from snapshot: PHRuntimeObjCIvarSnapshot
+    from snapshot: RuntimeObjCIvar
   ) -> ObjCIvarInfo {
     ObjCIvarInfo(
       name: snapshot.name,
@@ -1120,7 +1119,7 @@ private func dumpObjC(
   }
 
   private func runtimeProtocolInfo(
-    from snapshot: PHRuntimeObjCProtocolSnapshot
+    from snapshot: RuntimeObjCProtocol
   ) -> ObjCProtocolInfo {
     ObjCProtocolInfo(
       name: snapshot.name,
@@ -1142,10 +1141,10 @@ private func dumpObjC(
     imagePath: String,
     options: DumpOptions
   ) -> ObjCClassInfo? {
-    var failedStage: NSString?
-    guard let snapshot = PHRuntimeObjCInspector.snapshot(for: cls, failedStage: &failedStage) else {
+    var failedStage: String?
+    guard let snapshot = RuntimeObjCInspector.snapshot(for: cls, failedStage: &failedStage) else {
       if options.verbose {
-        let stage = (failedStage as String?) ?? "unknown"
+        let stage = failedStage ?? "unknown"
         fputs(
           "headerdump: runtime fallback skip class \(fallbackName) image=\(imagePath) stage=\(stage)\n",
           stderr

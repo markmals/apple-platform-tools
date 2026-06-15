@@ -6,10 +6,6 @@ import Testing
 
 @testable import HeaderDumpCore
 
-#if canImport(HeaderDumpRuntimeObjC)
-  import HeaderDumpRuntimeObjC
-#endif
-
 #if canImport(Darwin)
   import Darwin
 #endif
@@ -213,15 +209,46 @@ private func withEnvironment<T>(_ values: [String: String?], _ body: () async th
   }
 #endif
 
+#if canImport(ObjectiveC)
+  @objc private protocol RuntimeProbeProtocol {
+    @objc func probeRequired()
+    @objc optional func probeOptional()
+  }
+
+  @objc private class RuntimeProbe: NSObject, RuntimeProbeProtocol {
+    @objc var probeProperty: Int = 0
+    @objc func probeRequired() {}
+    @objc func probeMethod() {}
+  }
+#endif
+
 @Suite(.spec("story.headerdump.dump-framework"), .serialized)
 struct HeaderDumpCLITests {
-  #if canImport(ObjectiveC) && canImport(HeaderDumpRuntimeObjC)
+  #if canImport(ObjectiveC)
     @Test func `builds an NSObject snapshot with no failed stage`() {
-      var failedStage: NSString?
-      let snapshot = PHRuntimeObjCInspector.snapshot(for: NSObject.self, failedStage: &failedStage)
+      var failedStage: String?
+      let snapshot = RuntimeObjCInspector.snapshot(for: NSObject.self, failedStage: &failedStage)
       #expect(snapshot != nil)
       #expect(failedStage == nil)
       #expect(snapshot?.name == "NSObject")
+      #expect(snapshot?.superClassName == nil)  // NSObject is the root class
+      #expect((snapshot?.instanceSize ?? 0) > 0)
+    }
+
+    @Test func `the inspector captures members, superclass, and protocols`() {
+      var failedStage: String?
+      let snapshot = RuntimeObjCInspector.snapshot(
+        for: RuntimeProbe.self, failedStage: &failedStage)
+      #expect(failedStage == nil)
+      #expect(snapshot?.name.hasSuffix("RuntimeProbe") == true)
+      #expect(snapshot?.superClassName == "NSObject")
+      #expect(snapshot?.properties.contains { $0.name == "probeProperty" } == true)
+      #expect(snapshot?.methods.contains { $0.name == "probeRequired" } == true)
+      #expect(snapshot?.methods.contains { $0.name == "probeMethod" } == true)
+      let probeProtocol = snapshot?.protocols.first { $0.name.contains("RuntimeProbeProtocol") }
+      #expect(probeProtocol != nil)
+      #expect(probeProtocol?.methods.contains { $0.name == "probeRequired" } == true)
+      #expect(probeProtocol?.optionalMethods.contains { $0.name == "probeOptional" } == true)
     }
   #endif
 

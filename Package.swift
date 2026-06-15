@@ -83,12 +83,11 @@ let package = Package(
       ]
     ),
     // headerdump: private framework header extraction from Mach-O / the dyld cache.
-    .target(name: "HeaderDumpRuntimeObjC", publicHeadersPath: "include"),
+    // The runtime fallback (RuntimeObjCInspector) is now pure Swift inside HeaderDumpCore.
     .target(
       name: "HeaderDumpCore",
       dependencies: [
         "BinaryFoundation",
-        .target(name: "HeaderDumpRuntimeObjC", condition: .when(platforms: [.macOS, .iOS])),
         .product(name: "MachOKit", package: "MachOKit"),
         .product(name: "MachOObjCSection", package: "MachOObjCSection"),
         .product(name: "ObjCDump", package: "swift-objc-dump"),
@@ -101,7 +100,6 @@ let package = Package(
       dependencies: [
         "HeaderDumpCore",
         "TestSupport",
-        .target(name: "HeaderDumpRuntimeObjC", condition: .when(platforms: [.macOS, .iOS])),
         .product(name: "MachOKit", package: "MachOKit"),
       ]
     ),
