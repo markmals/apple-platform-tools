@@ -201,7 +201,7 @@ enum Injection {
     }
 
     let dylib = try BootDylib.require()
-    let stage = uitool_inject(pid, dylib)
+    let stage = RemoteInjector.inject(pid: pid, dylibPath: dylib)
     guard stage == 0 else { throw injectError(stage) }
     let session = try openSession(pid: pid, path: "running", replaced: false)
     return Session(

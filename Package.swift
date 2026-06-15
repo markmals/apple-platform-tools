@@ -189,10 +189,13 @@ let package = Package(
     // local system reads; the read verbs (windows/tree/find/node) run over a
     // SnapshotSource — a captured [WindowSnapshot] now, the injected UIToolServer
     // later. attach/detach + the live session source are the deferred injection half.
-    // UIToolInject: the C mach injector for attach-to-running — task_for_pid +
-    // remote-thread dlopen of the boot dylib into an already-running target.
-    // Kept in C (thread state + shellcode); the CLI calls uitool_inject.
+    // UIToolInject: the mach injector for attach-to-running — task_for_pid +
+    // remote-thread dlopen of the boot dylib into an already-running target. Pure
+    // Swift: the arm64 instruction encoding and bootstrap-region layout are tested
+    // pure code; the mach traps are quarantined in RemoteInjector (the package's
+    // one irreducible unsafe boundary). The CLI calls RemoteInjector.inject.
     .target(name: "UIToolInject"),
+    .testTarget(name: "UIToolInjectTests", dependencies: ["UIToolInject", "TestSupport"]),
     .executableTarget(
       name: "uitool",
       dependencies: [
