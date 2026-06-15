@@ -238,7 +238,7 @@ enum Injection {
         "\(bundleId) is already running — use 'uitool attach' to inspect it preserving state, "
           + "or --replace to relaunch fresh")
     }
-    running.forEach { $0.terminate() }
+    for application in running { application.terminate() }
     usleep(300_000)  // brief grace for the prior instance to exit
     return true
   }
