@@ -1,0 +1,55 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/Users/orion/Developer/Projects/apple-platform-tools/.codex/hooks/block-generated.sh'",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/Users/orion/Developer/Projects/apple-platform-tools/.codex/hooks/format-on-edit.sh'",
+            "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "bash '/Users/orion/Developer/Projects/apple-platform-tools/.codex/hooks/spec-reconcile.sh'",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/Users/orion/Developer/Projects/apple-platform-tools/.codex/hooks/user-prompt-context.sh'",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/Users/orion/Developer/Projects/apple-platform-tools/.codex/hooks/stop-lint.sh'",
+            "timeout": 120
+          }
+        ]
+      }
+    ]
+  }
+}
