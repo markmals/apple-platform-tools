@@ -23,6 +23,14 @@ run = "swift build"
 description = "Run the Swift Testing suite"
 run = "swift test"
 
+[tasks."mac-dev-skills-contracts:generate"]
+description = "Regenerate downstream CLI contract exports for mac-dev-skills"
+run = "scripts/generate-mac-dev-skills-contracts.sh"
+
+[tasks."mac-dev-skills-contracts:check"]
+description = "Fail if downstream CLI contract exports drift from Specs/Features"
+run = "scripts/generate-mac-dev-skills-contracts.sh --check"
+
 [tasks.install]
 description = "Build, ad-hoc sign, and install the distributable CLIs to ~/.local/bin"
 run = "scripts/install-tools.sh"

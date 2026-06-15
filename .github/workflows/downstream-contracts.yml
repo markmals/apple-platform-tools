@@ -1,0 +1,17 @@
+name: downstream-contracts
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  mac-dev-skills-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: check mac-dev-skills contract exports
+        run: scripts/generate-mac-dev-skills-contracts.sh --check
