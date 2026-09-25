@@ -122,7 +122,7 @@ Both **cooperative** paths — launch and task-port attach-to-running — ship i
 - **Unrestricted needs the full defang** — SIP off, AMFI boot-arg, libval off, arm64e ABI boot-arg, and an **arm64e** injectable. It is required **only** for targets the user did not sign.
 - Each precondition is judged independently; no check is skipped because another failed.
 - v1 is read-only — no write/mutation ops.
-- **Signed-artifact containment holds for BOTH postures.** The signed `UIToolBoot` dylib (and any framework / CLI) is **gitignored and never distributed** — dev box only; it is an attack tool on any other machine ([[architecture]] → "Dual-use & safety posture"). Cooperative being a stock-Mac posture does **not** relax this — the injectable is still a signed code-loading primitive that must not leave the dev box.
+- **The cooperative arm64 injectable ships with the tool; the unrestricted arm64e slice does not.** The arm64 `UIToolBoot` dylib installs beside `uitool` as a source-built developer tool (Homebrew) — a build output, gitignored, never a committed blob, never embedded in an app you ship. The **arm64e** slice stays dev-box only: it exists to load into apps you did not sign, which is only possible on a machine-wide-defanged box ([[architecture]] → "Dual-use & safety posture").
 
 ## Relationships
 

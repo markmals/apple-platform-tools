@@ -109,7 +109,7 @@ Optional `Key: value` lines at the end of the message. Use for:
 
 - Secrets (`.env`, credential files, API keys). If you see these in `git status`, stop and warn the user.
 - Build outputs (`dist/`, `.build/`, `DerivedData/`). The `.gitignore` should already exclude these — if it doesn't, fix the gitignore in its own commit.
-- The runtime cluster's signed artifacts (`*.dylib`, `*.framework`) — they are an attack tool elsewhere; `.gitignore` excludes them and containment is load-bearing.
+- The runtime cluster's build artifacts (`*.dylib`, `*.framework`) — they are built from source on install, not committed; `.gitignore` excludes them.
 - Personal IDE config (`.vscode/`, `.idea/`). Unless the user explicitly asks.
 - Large binaries unless the project explicitly tracks them.
 

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Build, ad-hoc sign, and install the distributable CLIs to ~/.local/bin.
+# Build, ad-hoc sign, and install the CLIs to ~/.local/bin.
 #
-# Installs ONLY the "safe" tools — the SDK-knowledge and static-analysis
-# clusters. The runtime cluster (uitool + its injected dylib/framework) is
-# NEVER installed by this script: it has a separate, dev-box-only signed flow
-# and must never be distributed. See Specs/ARCHITECTURE.md → "Dual-use & safety".
+# Installs all five tools — the SDK-knowledge, static-analysis, and runtime
+# clusters. uitool ships with its injected boot dylib beside it and is signed
+# with the debugger entitlement for the cooperative attach path (your own
+# dev-signed apps on a stock Mac). See Specs/ARCHITECTURE.md → "Dual-use & safety".
 #
 # Override the install dir with SDK_TOOLS_BINDIR (default ~/.local/bin).
 set -euo pipefail
@@ -48,10 +48,25 @@ for bundle in "$binpath"/*.bundle; do
     echo "✓ installed $name"
 done
 
+# uitool is the runtime-introspection CLI. It needs its injected boot dylib
+# (libUIToolBoot.dylib) beside it — BootDylib resolves the dylib next to the
+# executable — and the debugger entitlement so `attach` can take a get-task-allow
+# target's task port. This is the cooperative arm64 build; the arm64e unrestricted
+# slice is a separate dev-box build.
+echo "Building uitool + UIToolBoot (release)…"
+swift build -c release --product uitool >/dev/null
+swift build -c release --product UIToolBoot >/dev/null
+install -m 0755 "$binpath/uitool" "$bindir/uitool"
+install -m 0755 "$binpath/libUIToolBoot.dylib" "$bindir/libUIToolBoot.dylib"
+codesign --force --sign - "$bindir/libUIToolBoot.dylib" >/dev/null 2>&1 || true
+codesign --force --sign - --entitlements scripts/uitool-debugger.entitlements "$bindir/uitool" >/dev/null 2>&1 || true
+echo "✓ installed $bindir/uitool (+ libUIToolBoot.dylib, debugger entitlement)"
+
 echo
 echo "Smoke test (from $bindir):"
 "$bindir/sdk-api" --help >/dev/null && echo "  ✓ sdk-api"
 "$bindir/sdk-search" list >/dev/null && echo "  ✓ sdk-search (corpus resolved)"
+"$bindir/uitool" doctor >/dev/null && echo "  ✓ uitool (doctor)"
 
 case ":$PATH:" in
     *":$bindir:"*) ;;

@@ -158,9 +158,10 @@ node-id stringification over the decoded `Capture`. Two consequences pinned here
 - **v1 is read-only.** No op mutates the target; the value-fetching ops
   (`class`/`ivars`/`value`) that invoke live getters are deferred
   ([[domain.uitool.ipc]] — "default mode: structural, no-invoke").
-- **The server is part of the contained injectable.** It ships inside (or beside)
-  the signed [[domain.uitool.boot]] dylib, is gitignored, and never enters a
-  shippable target or release CI ([[domain.uitool.injection]] containment;
+- **The server ships inside the injectable, not inside your product.** It lives in
+  (or beside) the signed [[domain.uitool.boot]] dylib that installs with the
+  `uitool` developer tool — a gitignored build output, never a committed blob, and
+  never linked into or bundled with an app you ship ([[domain.uitool.injection]];
   [[architecture]] → "Dual-use & safety posture").
 - **Same `Capture` shape as offline.** Whatever the server sends as a read's
   `data`, the offline `--snapshot` file decodes to the same type, so
