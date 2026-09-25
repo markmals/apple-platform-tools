@@ -17,7 +17,7 @@ apple-platform-tools is **one SwiftPM package, many targets**. Most tools are pu
 
 | Concern | Choice | First-party docs |
 | --- | --- | --- |
-| Language (CLIs + foundations) | Swift 6 (`swift-tools-version` 6.4) | [docs.swift.org/swift-book](https://docs.swift.org/swift-book/) |
+| Language (CLIs + foundations) | Swift 6 (`swift-tools-version` 6.2) | [docs.swift.org/swift-book](https://docs.swift.org/swift-book/) |
 | Argument parser | Swift ArgumentParser | [github.com/apple/swift-argument-parser](https://github.com/apple/swift-argument-parser) |
 | Machine contract | the `AgentCLI` library | `Specs/models/agent-cli.md` |
 | Subprocess | swift-subprocess (for `xcrun`/`simctl`/disassembler spawns) | [github.com/swiftlang/swift-subprocess](https://github.com/swiftlang/swift-subprocess) |

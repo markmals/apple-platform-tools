@@ -1,4 +1,4 @@
-// swift-tools-version: 6.4
+// swift-tools-version: 6.2
 import PackageDescription
 
 // One package, many targets. Library targets are the shared spine (AgentCLI —

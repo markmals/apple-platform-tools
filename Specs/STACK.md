@@ -11,7 +11,7 @@ The toolchain catalog for apple-platform-tools — every tool, framework, and se
 
 | Concern | Choice |
 | --- | --- |
-| Language | [Swift](https://www.swift.org/) 6 (`swift-tools-version` 6.4) |
+| Language | [Swift](https://www.swift.org/) 6 (`swift-tools-version` 6.2) |
 | Package manager | one [Swift Package Manager](https://www.swift.org/package-manager/) package, many targets |
 | Argument parsing | [Swift ArgumentParser](https://github.com/apple/swift-argument-parser) |
 | Machine contract | the `AgentCLI` library — deterministic `Codable` JSON, exit-code map, stdout-payload / stderr-diagnostics discipline, `NO_COLOR` |
