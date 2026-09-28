@@ -47,7 +47,7 @@ The **description**:
 - No trailing period.
 - Specific. "fix bug" is useless; "reject stale node ids in node" is useful.
 
-The **scope** names what the commit touches. Scoped Commits leaves the vocabulary to the project; in this repo a scope must be one of the **defined** scopes below — and `scoped-commits.sh` enforces that mechanically, rejecting a subject whose scope isn't real (see `.claude/rules/enforcement-hierarchy.md`). The set isn't a hand-maintained list: the hook derives it from the filesystem at commit time, so adding a spec, a feature folder, or a `Sources/` target makes it a usable scope automatically.
+The **scope** names what the commit touches. Scoped Commits leaves the vocabulary to the project; in this repo a scope must be one of the **defined** scopes below. The set isn't a hand-maintained list: it's derived from the filesystem, so adding a spec, a feature folder, or a `Sources/` target makes it a usable scope automatically.
 
 | Scope | Use for |
 | --- | --- |

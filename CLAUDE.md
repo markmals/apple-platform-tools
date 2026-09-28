@@ -30,7 +30,8 @@ If you're tempted to encode a behavioral contract only in code, write a spec ins
 ├── CLAUDE.md            ← this file
 ├── Package.swift        ← one package; library + executable targets
 ├── mise.toml            ← fmt / lint / build / test tasks
-├── .claude/             ← agents, sdd-* commands, hooks, rules, skills, templates
+├── .claude/             ← agents, sdd-* commands, rules, skills, templates
+├── .omp/hooks/          ← omp agent hooks (stop gate: lint + contract drift)
 ├── Specs/               ← cross-cutting specs (CONVENTIONS, ARCHITECTURE, STACK)
 ├── Features/<tool>/     ← feature-scoped specs as <NNNN>-<slug>/, per tool
 ├── Sources/
@@ -82,7 +83,7 @@ The three capability clusters — **static binary analysis** (`headerdump`, `red
 
 ## Local tooling
 
-`mise` drives tasks. `mise tasks` lists them; the contract is `fmt` / `lint` / `build` / `test`. The `format-on-edit` and `stop-lint` hooks dispatch to `fmt` / `lint`.
+`mise` drives tasks. `mise tasks` lists them; the contract is `fmt` / `lint` / `build` / `test`. The omp stop hook (`.omp/hooks/post/stop-checks.ts`) runs `lint` when Swift sources changed and `mac-dev-skills-contracts:check` on every stop, and sends the agent back once if either fails.
 
 ## MCP / IDE bridge
 
